@@ -5,6 +5,8 @@
  *
  */
 
+#include "external_constants.h"
+
 #include <TAxis.h>
 #include <TLine.h>
 #include <TFile.h>
@@ -50,8 +52,8 @@
 #define kVDEF_tblPeakBdmm	"2011:fitPeak:val:bdmm"
 #define kVDEF_tblSigBdmm	"2011:fitSig:val:bdmm"
 
-const static float kBFBsmm = 3.2e-9;
-const static float kBFBdmm = 1.0e-10;
+const static float kBFBsmm = kBF_BSMM;
+const static float kBFBdmm = kBF_BDMM;
 
 using namespace RooStats;
 
@@ -288,7 +290,7 @@ void clsPlotter::print(double cl)
 			if (fAllDigits) {
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", Form("%s:%s",kVDEF_ulObs,fPOI.c_str()), ul);
 			} else {
-				expo = floor(log10(ul));
+			        expo = (int)floor(log10(ul));
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulObs,fPOI.c_str()), ul*pow(10.,-expo));
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%d}}}\n", Form("%s:%s",kVDEF_ulObsExponent,fPOI.c_str()), expo);
 			}
@@ -303,7 +305,7 @@ void clsPlotter::print(double cl)
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", Form("%s:%s",kVDEF_intObsErrHi,fPOI.c_str()), ul);
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", Form("%s:%s",kVDEF_intObsErrLo,fPOI.c_str()), ll);
 			} else {
-				expo = floor(log10(bf));
+			        expo = (int)floor(log10(bf));
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_intObs,fPOI.c_str()), bf*pow(10.,-expo));
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_intObsErrHi,fPOI.c_str()), ul*pow(10.,-expo));
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_intObsErrLo,fPOI.c_str()), ll*pow(10.,-expo));
@@ -346,11 +348,11 @@ void clsPlotter::print(double cl)
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", Form("%s:%s",kVDEF_ulSMErrHi,fPOI.c_str()), smPl);
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", Form("%s:%s",kVDEF_ulSMErrLo,fPOI.c_str()), smMi);
 			} else {
-				expo = floor(log10(ul));
-				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulSMMed,fPOI.c_str()), ul*pow(10.,-expo));
-				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulSMErrHi,fPOI.c_str()), smPl*pow(10.,-expo));
-				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulSMErrLo,fPOI.c_str()), smMi*pow(10.,-expo));
-				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%d}}}\n", Form("%s:%s",kVDEF_ulSMExponent,fPOI.c_str()), expo);
+			  expo = (int)floor(log10(ul));
+			  fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulSMMed,fPOI.c_str()), ul*pow(10.,-expo));
+			  fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulSMErrHi,fPOI.c_str()), smPl*pow(10.,-expo));
+			  fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulSMErrLo,fPOI.c_str()), smMi*pow(10.,-expo));
+			  fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%d}}}\n", Form("%s:%s",kVDEF_ulSMExponent,fPOI.c_str()), expo);
 			}
 		} else {
 			if (fAllDigits) {
@@ -359,7 +361,7 @@ void clsPlotter::print(double cl)
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", Form("%s:%s",kVDEF_intSMErrLo,fPOI.c_str()), (1.-ll)*theoreticalBF);
 			} else {
 				if (isnan(ll)) ll = 0.;
-				expo = floor(log10(theoreticalBF));
+				expo = (int)floor(log10(theoreticalBF));
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_intSMExp,fPOI.c_str()), theoreticalBF*pow(10., -expo));
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_intSMErrHi,fPOI.c_str()), (ul-1.)*theoreticalBF*pow(10.,-expo));
 				fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_intSMErrLo,fPOI.c_str()), (1.-ll)*theoreticalBF*pow(10.,-expo));
@@ -401,11 +403,11 @@ void clsPlotter::print(double cl)
 			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", Form("%s:%s",kVDEF_ulBkgErrHi,fPOI.c_str()), smPl);
 			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%e}}}\n", Form("%s:%s",kVDEF_ulBkgErrLo,fPOI.c_str()), smMi);
 		} else {
-			expo = floor(log10(ul));
-			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulBkgMed,fPOI.c_str()), ul*pow(10., -expo));
-			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulBkgErrHi,fPOI.c_str()), smPl*pow(10.,-expo));
-			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulBkgErrLo,fPOI.c_str()), smMi*pow(10.,-expo));
-			fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%d}}}\n", Form("%s:%s",kVDEF_ulBkgExponent,fPOI.c_str()), expo);
+		  expo = (int)floor(log10(ul));
+		  fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulBkgMed,fPOI.c_str()), ul*pow(10., -expo));
+		  fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulBkgErrHi,fPOI.c_str()), smPl*pow(10.,-expo));
+		  fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%.1f}}}\n", Form("%s:%s",kVDEF_ulBkgErrLo,fPOI.c_str()), smMi*pow(10.,-expo));
+		  fprintf(latexFile, "\\vdef{%s}	{\\ensuremath{{%d}}}\n", Form("%s:%s",kVDEF_ulBkgExponent,fPOI.c_str()), expo);
 		}
 	}
 	
@@ -422,13 +424,14 @@ void clsPlotter::makeObs(bool reload)
 	std::vector<double> xvalues;
 	std::vector<unsigned int> index(size);
 	double clevel;
-	
+	double BF = fPOI.compare("mu_s") == 0 ? kBF_BSMM : kBF_BDMM;
+
 	if (!result)
 		goto bail;
 	
 	if (fObs && reload)
 		fObs = NULL;
-	
+
 	if (!fObs) {
 		fObs = new TGraph;
 		
@@ -442,7 +445,7 @@ void clsPlotter::makeObs(bool reload)
 		for (j = 0; j < size; j++) {
 		  clevel = fUseCLs ? result->CLs(index[j]) : result->CLsplusb(index[j]);
 		  if (clevel < 0) clevel = 1.0;
-		  fObs->SetPoint(j, result->GetXValue(index[j]), clevel);
+		  fObs->SetPoint(j, BF*result->GetXValue(index[j]), clevel);
 		}
 	}
 bail:
@@ -465,6 +468,8 @@ void clsPlotter::makeSMBands(bool reload)
 	vector<double> pvalues;
 	vector<double> xvaluesBkg;
 	vector<double> xvaluesSM;
+
+	double BF = fPOI.compare("mu_s") == 0 ? kBF_BSMM : kBF_BDMM;
 	
 	if (!resultBkg || !resultSM)
 		goto bail;
@@ -530,13 +535,13 @@ void clsPlotter::makeSMBands(bool reload)
 		x = const_cast<double*>(&pvalues[0]);
 		TMath::Quantiles(pvalues.size(), 5, x, q, p, false);
 		
-		fG0SM->SetPoint(j, resultBkg->GetXValue(ixBkg), q[2]);
+		fG0SM->SetPoint(j, BF*resultBkg->GetXValue(ixBkg), q[2]);
 		
-		fG1SM->SetPoint(j, resultBkg->GetXValue(ixBkg), q[2]);
+		fG1SM->SetPoint(j, BF*resultBkg->GetXValue(ixBkg), q[2]);
 		fG1SM->SetPointEYlow(j, q[2] - q[1]);
 		fG1SM->SetPointEYhigh(j, q[3] - q[2]);
 		
-		fG2SM->SetPoint(j, resultBkg->GetXValue(ixBkg), q[2]);
+		fG2SM->SetPoint(j, BF*resultBkg->GetXValue(ixBkg), q[2]);
 		fG2SM->SetPointEYlow(j, q[2] - q[0]);
 		fG2SM->SetPointEYhigh(j, q[4] - q[2]);
 	}
@@ -564,6 +569,8 @@ void clsPlotter::makeBkgBands(bool reload)
 	double p[5];
 	double q[5];
 	double *x;
+	
+	double BF = fPOI.compare("mu_s") == 0 ? kBF_BSMM : kBF_BDMM;
 	
 	if (!result)
 		goto bail;
@@ -605,13 +612,13 @@ void clsPlotter::makeBkgBands(bool reload)
 		
 		TMath::Quantiles(values.size(), 5, x, q, p, false);
 		
-		fG0Bkg->SetPoint(j, result->GetXValue(ix), q[2]);
+		fG0Bkg->SetPoint(j, BF*result->GetXValue(ix), q[2]);
 		
-		fG1Bkg->SetPoint(j, result->GetXValue(ix), q[2]);
+		fG1Bkg->SetPoint(j, BF*result->GetXValue(ix), q[2]);
 		fG1Bkg->SetPointEYlow(j, q[2] - q[1]); // -1 sigma error
 		fG1Bkg->SetPointEYhigh(j, q[3] - q[2]); // +1 sigma error
 		
-		fG2Bkg->SetPoint(j, result->GetXValue(ix), q[2]);
+		fG2Bkg->SetPoint(j, BF*result->GetXValue(ix), q[2]);
 		fG2Bkg->SetPointEYlow(j, q[2] - q[0]);
 		fG2Bkg->SetPointEYhigh(j, q[4] - q[2]);
 		
@@ -637,6 +644,7 @@ void clsPlotter::plot(double cl)
 	int j,nbr;
 	TMultiGraph *mg;
 	TGraph *gr = NULL;
+	const char *xaxname = fPOI.compare("mu_s") == 0 ? "BF(B_{s}^{0} #rightarrow #mu^{+} #mu^{-})" :  "BF(B^{0} #rightarrow #mu^{+} #mu^{-})";
 	
 	makeObs();
 	makeSMBands();
@@ -662,13 +670,13 @@ void clsPlotter::plot(double cl)
 	// draw the graphs
 	if (fPlotObs) {
 		fObs->Draw("AL");
-		fObs->GetXaxis()->SetTitle("BF / BF_{SM}");
+		fObs->GetXaxis()->SetTitle(xaxname);
 		fObs->GetYaxis()->SetTitle(Form("CL_{%s}", (fUseCLs ? "s" : "s+b")));
 		fObs->GetYaxis()->SetTitleOffset(1.0);
 	} else {
 		gr = fSMBands ? fG0SM : fG0Bkg;
 		gr->Draw("AL");
-		gr->GetXaxis()->SetTitle("BF / BF_{SM}");
+		gr->GetXaxis()->SetTitle(xaxname);
 		gr->GetYaxis()->SetTitle(Form("CL_{%s}", (fUseCLs ? "s" : "s+b")));
 		gr->GetYaxis()->SetTitleOffset(1.0);
 	}
