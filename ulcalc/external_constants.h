@@ -20,6 +20,9 @@
 #include <TCut.h>
 #include <TMath.h>
 
+#define kBF_BSMM 3.57e-9
+#define kBF_BDMM 1.1e-10
+
 // Systematic uncertainties
 enum systematics_t {
 	g_sys_acc_efftrack,		// tracking efficiency for each additional hadron (muon should cancel)
