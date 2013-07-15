@@ -120,6 +120,7 @@ int main(int argc, char** argv) {
   if (null) fitdata.doubleNull = true;
   fitdata.significance();
   if (LLprofile) fitdata.profile_NLL();
+  if (LLdouble) fitdata.doublescan();
   //fitdata.save();
   if (file) fclose(file);
   return EXIT_SUCCESS;

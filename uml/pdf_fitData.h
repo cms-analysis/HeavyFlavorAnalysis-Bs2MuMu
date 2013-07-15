@@ -67,6 +67,7 @@ class pdf_fitData : public pdf_analysis {
 
     void extract_N_inRanges();
     void profile_NLL();
+    void doublescan();
 
     bool SMIsNull;
 
@@ -136,6 +137,10 @@ class pdf_fitData : public pdf_analysis {
     void make_models();
 
     void plot_hypotest(HypoTestResult * hts);
+
+    TH2D* frameTH2D(TH2D *in, double threshold);
+    TList * contourFromTH2(TH2 *h2in, double threshold, int minPoints=20);
+
 
 };
 

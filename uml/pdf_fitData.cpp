@@ -2162,7 +2162,7 @@ void pdf_fitData::profile_NLL() {
 //  RooNLLVar nll0("nll0","nll0",ws_->pdf(pdfname.c_str()),*global_data) ;
 
   // Construct unbinned likelihood
-  RooAbsReal* nll = ws_->pdf(pdfname.c_str())->createNLL(*global_data, NumCPU(2), Extended(), pee ? /*ConditionalObservables(*ws_->var("ReducedMassRes")) */ RooCmdArg::none(): RooCmdArg::none(), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()) ;
+  RooAbsReal* nll = ws_->pdf(pdfname.c_str())->createNLL(*global_data, NumCPU(16), Extended(), pee ? /*ConditionalObservables(*ws_->var("ReducedMassRes")) */ RooCmdArg::none(): RooCmdArg::none(), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()) ;
   // Minimize likelihood w.r.t all parameters before making plots
   RooMinuit(*nll).migrad() ;
 
@@ -2194,6 +2194,166 @@ void pdf_fitData::profile_NLL() {
   }
   delete frame;
   delete c;
+
+}
+
+TH2D* pdf_fitData::frameTH2D(TH2D *in, double threshold){
+#if 1
+        // NEW LOGIC:
+        //   - pretend that the center of the last bin is on the border if the frame
+        //   - add one tiny frame with huge values
+        double frameValue = 1000;
+        if (TString(in->GetName()).Contains("bayes")) frameValue = 0.0;
+
+	Double_t xw = in->GetXaxis()->GetBinWidth(1);
+	Double_t yw = in->GetYaxis()->GetBinWidth(1);
+
+	Int_t nx = in->GetNbinsX();
+	Int_t ny = in->GetNbinsY();
+
+	Double_t x0 = in->GetXaxis()->GetXmin();
+	Double_t x1 = in->GetXaxis()->GetXmax();
+
+	Double_t y0 = in->GetYaxis()->GetXmin();
+	Double_t y1 = in->GetYaxis()->GetXmax();
+        Double_t xbins[999], ybins[999];
+        double eps = 0.1;
+
+        xbins[0] = x0 - eps*xw - xw; xbins[1] = x0 + eps*xw - xw;
+        for (int ix = 2; ix <= nx; ++ix) xbins[ix] = x0 + (ix-1)*xw;
+        xbins[nx+1] = x1 - eps*xw + 0.5*xw; xbins[nx+2] = x1 + eps*xw + xw;
+
+        ybins[0] = y0 - eps*yw - yw; ybins[1] = y0 + eps*yw - yw;
+        for (int iy = 2; iy <= ny; ++iy) ybins[iy] = y0 + (iy-1)*yw;
+        ybins[ny+1] = y1 - eps*yw + yw; ybins[ny+2] = y1 + eps*yw + yw;
+
+	TH2D *framed = new TH2D(
+			Form("%s framed",in->GetName()),
+			Form("%s framed",in->GetTitle()),
+			nx + 2, xbins,
+			ny + 2, ybins
+			);
+
+	//Copy over the contents
+	for(int ix = 1; ix <= nx ; ix++){
+		for(int iy = 1; iy <= ny ; iy++){
+			framed->SetBinContent(1+ix, 1+iy, in->GetBinContent(ix,iy));
+		}
+	}
+	//Frame with huge values
+	nx = framed->GetNbinsX();
+	ny = framed->GetNbinsY();
+	for(int ix = 1; ix <= nx ; ix++){
+		framed->SetBinContent(ix,  1, frameValue);
+		framed->SetBinContent(ix, ny, frameValue);
+	}
+	for(int iy = 2; iy <= ny-1 ; iy++){
+		framed->SetBinContent( 1, iy, frameValue);
+		framed->SetBinContent(nx, iy, frameValue);
+	}
+
+	return framed;
+#else
+        double frameValue = 1000;
+        if (TString(in->GetName()).Contains("bayes")) frameValue = 0.0;
+
+	Double_t xw = in->GetXaxis()->GetBinWidth(1);
+	Double_t yw = in->GetYaxis()->GetBinWidth(1);
+
+	Int_t nx = in->GetNbinsX();
+	Int_t ny = in->GetNbinsY();
+
+	Double_t x0 = in->GetXaxis()->GetXmin();
+	Double_t x1 = in->GetXaxis()->GetXmax();
+
+	Double_t y0 = in->GetYaxis()->GetXmin();
+	Double_t y1 = in->GetYaxis()->GetXmax();
+
+	TH2D *framed = new TH2D(
+			Form("%s framed",in->GetName()),
+			Form("%s framed",in->GetTitle()),
+			nx + 2, x0-xw, x1+xw,
+			ny + 2, y0-yw, y1+yw
+			);
+
+	//Copy over the contents
+	for(int ix = 1; ix <= nx ; ix++){
+		for(int iy = 1; iy <= ny ; iy++){
+			framed->SetBinContent(1+ix, 1+iy, in->GetBinContent(ix,iy));
+		}
+	}
+	//Frame with huge values
+	nx = framed->GetNbinsX();
+	ny = framed->GetNbinsY();
+	for(int ix = 1; ix <= nx ; ix++){
+		framed->SetBinContent(ix,  1, frameValue);
+		framed->SetBinContent(ix, ny, frameValue);
+	}
+	for(int iy = 2; iy <= ny-1 ; iy++){
+		framed->SetBinContent( 1, iy, frameValue);
+		framed->SetBinContent(nx, iy, frameValue);
+	}
+
+	return framed;
+#endif
+}
+
+TList* pdf_fitData::contourFromTH2(TH2 *h2in, double threshold, int minPoints) {
+    std::cout << "Getting contour at threshold " << threshold << " from " << h2in->GetName() << std::endl;
+    //http://root.cern.ch/root/html/tutorials/hist/ContourList.C.html
+    Double_t contours[1];
+    contours[0] = threshold;
+    if (h2in->GetNbinsX() * h2in->GetNbinsY() > 10000) minPoints = 50;
+
+    TH2D *h2 = frameTH2D((TH2D*)h2in,threshold);
+
+    h2->SetContour(1, contours);
+
+    // Draw contours as filled regions, and Save points
+    TCanvas *c = new TCanvas("c","c",600, 600);
+    h2->Draw("CONT Z LIST");
+//    gPad->Update(); // Needed to force the plotting and retrieve the contours in TGraphs
+
+    c->Print((get_address("doubleprofileLL", "", false) + ".gif").c_str());
+    c->Print((get_address("doubleprofileLL", "", false) + ".pdf").c_str());
+    c->Print((get_address("doubleprofileLL", "", false) + ".root").c_str());
+
+    // Get Contours
+    TObjArray *conts = (TObjArray*)gROOT->GetListOfSpecials()->FindObject("contours");
+    TList* contLevel = NULL;
+
+    if (conts == NULL || conts->GetSize() == 0){
+        printf("*** No Contours Were Extracted!\n");
+        return 0;
+    }
+
+    TList *ret = new TList();
+    for(int i = 0; i < conts->GetSize(); i++){
+        contLevel = (TList*)conts->At(i);
+        printf("Contour %d has %d Graphs\n", i, contLevel->GetSize());
+        for (int j = 0, n = contLevel->GetSize(); j < n; ++j) {
+            TGraph *gr1 = (TGraph*) contLevel->At(j);
+            if (gr1->GetN() > minPoints) ret->Add(gr1->Clone());
+            //break;
+        }
+    }
+    return ret;
+}
+
+void pdf_fitData::doublescan() {
+	// Construct unbinned likelihood
+	RooAbsReal* nll = ws_->pdf(pdfname.c_str())->createNLL(*global_data, NumCPU(16), Extended(), pee ? /*ConditionalObservables(*ws_->var("ReducedMassRes")) */ RooCmdArg::none(): RooCmdArg::none(), syst ? Constrain(*ws_->set("constr")) : RooCmdArg::none()) ;
+	// Minimize likelihood w.r.t all parameters before making plots
+	RooMinuit(*nll).migrad() ;
+  RooAbsReal* pll = nll->createProfile(RooArgSet(*ws_->var("BF_bs"), *ws_->var("BF_bd")));
+  RooFormulaVar* double_pll = new RooFormulaVar("double_pll", "double_pll", "2*@0", RooArgList(*pll));
+  TH2 *h2dpll = (TH2*)double_pll->createHistogram("h2dpll", *ws_->var("BF_bs"), Binning(0.,5e-9,20), YVar(*ws_->var("BF_bd"), Binning(0.,5e-9,20)));
+
+
+  ///////contourFromTH2(h2dpll, , 40);
+
+
+
 }
 
 void pdf_fitData::hack_ws(string frozen_ws_address) {
