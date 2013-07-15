@@ -19,7 +19,7 @@
 // External constants //
 ////////////////////////
 // NEW LHCb VALUE
-static const measurement_t fs_by_fu(0.267,0.021,0.021);
+static const measurement_t fs_by_fu(0.256,0.024,0.024);
 
 // PDG Values
 static const measurement_t f_s(0.113,0.013,0.013);
@@ -27,8 +27,8 @@ static const measurement_t f_u(0.401,0.013,0.013);
 static const measurement_t f_bbaryon(0.085,0.022,0.022);
 
 // branching fractions
-static const measurement_t sm_bstomumu(3.2e-9,0,0);
-static const measurement_t sm_bdtomumu(1.0e-10,0,0);
+static const measurement_t sm_bstomumu(3.57e-9,0,0);
+static const measurement_t sm_bdtomumu(1.1e-10,0,0);
 static const measurement_t bptojpsik(1.014e-3,0.034e-3,0.034e-3);
 static const measurement_t jpsitomumu(0.0593,0.0006,0.0006);
 

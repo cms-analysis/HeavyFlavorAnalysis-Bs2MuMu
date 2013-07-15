@@ -1,6 +1,5 @@
 /*
  *  external_constants.h
- *  final_calculator
  *
  *  Created by Christoph Nägeli <christoph.naegeli@psi.ch> on 17.03.11.
  *  Copyright 2011 Christoph Nägeli. All rights reserved.
@@ -97,9 +96,23 @@ class measurement_t {
 			return measurement_t(val, errHi, errLo);
 		}
 		
+		measurement_t subtract(measurement_t m) const {
+			return add( measurement_t(-1,0,0)*m );
+		}
+		
+		measurement_t sqrt() const {
+			double val = TMath::Sqrt(getVal());
+			double hi = TMath::Sqrt(getVal() + getErrHi());
+			double lo = TMath::Sqrt(getVal() - getErrLo());
+			return measurement_t(val,hi,lo);
+		}
+		
 		measurement_t operator*(measurement_t m) const { return multiply(m); }
 		measurement_t operator/(measurement_t m) const { return divide(m); }
 		measurement_t operator+(measurement_t m) const { return add(m); }
+		measurement_t operator-(measurement_t m) const { return subtract(m); }
+		
+		std::string toString() { return std::string(Form("%e + %e - %e",fVal,fErrHi,fErrLo)); }
 		
 	private:
 		double fVal;
@@ -147,6 +160,7 @@ extern const char *bmmGeneratorCuts;
 enum bmm_param_tag {
 	/* Bp -> J/psi Kp */
 	kAcc_bplus = 1,
+	kAcc_hard_bplus,
 	kEff_mu_bplus,
 	kEff_trig_bplus,
 	kEff_cand_bplus,
@@ -155,6 +169,7 @@ enum bmm_param_tag {
 	kTot_bplus,
 	/* B -> mumu */
 	kAcc_bmm,
+	kAcc_hard_bmm,
 	kEff_mu_bmm,
 	kEff_trig_bmm,
 	kEff_cand_bmm,
