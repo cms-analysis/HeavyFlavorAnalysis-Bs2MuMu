@@ -71,15 +71,15 @@ echo "lcg-del -b -D srmv2 -l $STORAGE1/$JOB.root"
 lcg-del -b -D srmv2 -l "$STORAGE1/$JOB.root"
 echo "lcg-cp -b -D srmv2 $JOB.root $STORAGE1/$JOB.root"
 lcg-cp -b -D srmv2 $JOB.root "$STORAGE1/$JOB.root"
-echo "lcg-ls -b -D srmv2 $STORAGE1/$JOB.root"
-lcg-ls -b -D srmv2 "$STORAGE1/$JOB.root"
+echo "lcg-ls -b -D srmv2 -l $STORAGE1/$JOB.root"
+lcg-ls -b -D srmv2 -l "$STORAGE1/$JOB.root"
 
 echo "lcg-del -b -D srmv2 -l $STORAGE1/$JOB.log"
 lcg-del -b -D srmv2 -l "$STORAGE1/$JOB.log"
 echo "lcg-cp -b -D srmv2 $JOB.log $STORAGE1/$JOB.log"
 lcg-cp -b -D srmv2 $JOB.log "$STORAGE1/$JOB.log"
-echo "lcg-ls -b -D srmv2 $STORAGE1/$JOB.log"
-lcg-ls -b -D srmv2 "$STORAGE1/$JOB.log"
+echo "lcg-ls -b -D srmv2 -l $STORAGE1/$JOB.log"
+lcg-ls -b -D srmv2 -l "$STORAGE1/$JOB.log"
 
 # BATCH END
 

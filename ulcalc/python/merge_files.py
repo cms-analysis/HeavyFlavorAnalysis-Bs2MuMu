@@ -19,7 +19,8 @@ rootfilecontent='''
 const char* result_names[] = {
 	"Hybrid_CLb",
 	"Hybrid_Ul",
-	"Hybrid_Int"
+	"Hybrid_Int",
+        "Hybrid_Bkg"
 };
 
 void mergeSpaces(RooWorkspace *targetSpace, RooWorkspace *addSpace, std::string resultName)
@@ -82,6 +83,7 @@ void merge(const char *targetName, const char *addName)
 				mergeSpaces(targetSpace, addSpace, std::string(Form("%s_mu_s_SM",result_names[j])));
 				mergeSpaces(targetSpace, addSpace, std::string(Form("%s_mu_d",result_names[j])));
 				mergeSpaces(targetSpace, addSpace, std::string(Form("%s_mu_d_SM",result_names[j])));
+                                mergeSpaces(targetSpace, addSpace, std::string(result_names[j]));
 			}
 		} else {
 			cout << Form("No target workspace found, copying from '%s'",addName) << endl;

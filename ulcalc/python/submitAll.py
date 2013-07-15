@@ -41,7 +41,7 @@ BATCH_SCRIPT = os.environ['CMSSW_BASE'] + "/src/HeavyFlavorAnalysis/Bs2MuMu/ulca
 TAR = os.environ['CMSSW_BASE'] + "/src/HeavyFlavorAnalysis/Bs2MuMu/ulcalc/ulcalc.tar.gz"
 
 os.chdir(BKG)
-TOY_COUNT = 10000
+TOY_COUNT = 5000
 ALGO_NAME = "bkg"
 CMD = "run -q all.q -c %s -t %s -m batch -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/%s/ulcalc/%s' -x 'bin/ulcalc --SM-exp --fixed-bkg --toys %d --seed %s -a %s' *%s*" % (BATCH_SCRIPT,TAR,os.environ["USER"],OUTPUT,TOY_COUNT,ADD_ARGS,ALGO_NAME,BKG)
 print CMD
@@ -55,14 +55,14 @@ for res in RESULTS:
         # prepare special arguments to ulcalc depending on computation
         BDMM_OPT = ""
         if dec == "bdmm": BDMM_OPT = "--bdtomumu"
-        TOY_COUNT = 1000;
-        if res=="sign": TOY_COUNT = 10000
+        TOY_COUNT = 500;
+        if res=="sign": TOY_COUNT = 5000
         if res=="sign": ALGO_NAME = "clb_hybrid"
         elif res=="ul": ALGO_NAME = "hybrid"
         else: ALGO_NAME = "int_hybrid"
-        RANGE = 2.5
+        RANGE = 3
         if dec=="bdmm": RANGE *= 10
-        RANGE_ARG = "-n 26 -r 0,%d" % RANGE
+        RANGE_ARG = "-n 31 -r 0,%f" % RANGE
         if res=="sign": RANGE_ARG = ""
         CMD = "run -q all.q -c %s -t %s -m batch -r 'STORAGE1 srm://t3se01.psi.ch:8443/srm/managerv2\?SFN=/pnfs/psi.ch/cms/trivcat/store/user/%s/ulcalc/%s' -x 'bin/ulcalc --SM-exp %s --fixed-bkg --toys %d --seed %s -a %s %s' *%s*" % (BATCH_SCRIPT,TAR,os.environ["USER"],OUTPUT,BDMM_OPT,TOY_COUNT,ADD_ARGS,ALGO_NAME,RANGE_ARG,dec)
         print CMD
