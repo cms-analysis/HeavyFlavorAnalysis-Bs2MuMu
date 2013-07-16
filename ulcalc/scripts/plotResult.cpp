@@ -13,6 +13,7 @@
 #include <TGraph.h>
 #include <TLegend.h>
 #include <TCanvas.h>
+#include <TLatex.h>
 #include <TGraphAsymmErrors.h>
 #include <TMultiGraph.h>
 #include <TVirtualPad.h>
@@ -435,7 +436,7 @@ void clsPlotter::makeObs(bool reload)
 	if (!fObs) {
 		fObs = new TGraph;
 		
-		fObs->SetTitle(Form("%s observed", (fUseCLs ? "CLs" : "CLs+b")));
+		fObs->SetTitle();
 		fObs->SetLineWidth(2);
 		
 		// sequential access
@@ -488,9 +489,9 @@ void clsPlotter::makeSMBands(bool reload)
 	fG1SM = new TGraphAsymmErrors;
 	fG2SM = new TGraphAsymmErrors;
 	
-	fG0SM->SetTitle(Form("Expected SM %s - Median",(fUseCLs ? "CLs" : "CLs+b")));
-	fG1SM->SetTitle(Form("Expected SM %s #pm 1 #sigma",(fUseCLs ? "CLs" : "CLs+b")));
-	fG2SM->SetTitle(Form("Expected SM %s #pm 2 #sigma",(fUseCLs ? "CLs" : "CLs+b")));
+	fG0SM->SetTitle();
+	fG1SM->SetTitle();
+	fG2SM->SetTitle();
 	
 	// sequential access
 	for (j = 0; j < (unsigned int)resultBkg->ArraySize(); j++) xvaluesBkg.push_back(resultBkg->GetXValue(j));
@@ -589,9 +590,9 @@ void clsPlotter::makeBkgBands(bool reload)
 	fG1Bkg = new TGraphAsymmErrors;
 	fG2Bkg = new TGraphAsymmErrors;
 	
-	fG0Bkg->SetTitle(Form("Expected %s - Median", (fUseCLs ? "CLs" : "CLs+b")));
-	fG1Bkg->SetTitle(Form("Expected %s #pm 1 #sigma", (fUseCLs ? "CLs" : "CLs+b")));
-	fG2Bkg->SetTitle(Form("Expected %s #pm 2 #sigma", (fUseCLs ? "CLs" : "CLs+b")));
+	fG0Bkg->SetTitle();
+	fG1Bkg->SetTitle();
+	fG2Bkg->SetTitle();
 	
 	// seq access
 	for (j = 0; j < (unsigned int)result->ArraySize(); j++) xvalues.push_back(result->GetXValue(j));
@@ -641,9 +642,9 @@ void clsPlotter::plot(double cl)
 	TLegend *leg = NULL;
 	TObject *obj;
 	TLine *line;
-	int j,nbr;
 	TMultiGraph *mg;
 	TGraph *gr = NULL;
+	TLatex t;
 	const char *xaxname = fPOI.compare("mu_s") == 0 ? "BF(B_{s}^{0} #rightarrow #mu^{+} #mu^{-})" :  "BF(B^{0} #rightarrow #mu^{+} #mu^{-})";
 	
 	makeObs();
@@ -652,15 +653,16 @@ void clsPlotter::plot(double cl)
 	mg = fSMBands ? fMgSM : fMgBkg;
 	
 	if (fDrawLegend) {
-		leg = new TLegend(0.53,0.63,0.83,0.83,"","NDC");
+		leg = new TLegend(0.53,0.63,0.89,0.89,"","NDC");
 		
 		if(fPlotObs)
-		  leg->AddEntry(fObs,"","L");
+		  leg->AddEntry(fObs,"CL_{s} observed","L");
 		
-		nbr = mg->GetListOfGraphs()->GetSize();
-		for (j = nbr-1; j>=0; j--)
-			if ((obj = mg->GetListOfGraphs()->At(j)) != NULL) leg->AddEntry(obj,"", ((j == nbr-1) ? "L" : "F"));
-		
+		if ((obj = mg->GetListOfGraphs()->At(0)) != NULL) leg->AddEntry(obj,Form("Expected %s%s #pm 2 #sigma", (fSMBands ? "SM " : ""), (fUseCLs ? "CL_{s}" : "CL_{s+b}")), "F");
+		if ((obj = mg->GetListOfGraphs()->At(1)) != NULL) leg->AddEntry(obj,Form("Expected %s%s #pm 1 #sigma", (fSMBands ? "SM " : ""), (fUseCLs ? "CL_{s}" : "CL_{s+b}")), "F");
+		if ((obj = mg->GetListOfGraphs()->At(2)) != NULL) leg->AddEntry(obj,Form("Expected %s%s median", (fSMBands ? "SM " : ""), (fUseCLs ? "CL_{s}" : "CL_{s+b}")),"L");
+
+		// Form("Expected SM %s - Median",(fUseCLs ? "CLs" : "CLs+b")
 		leg->SetFillColor(kWhite);
 		leg->SetLineWidth(0);
 		leg->SetLineColor(0);
@@ -671,14 +673,18 @@ void clsPlotter::plot(double cl)
 	if (fPlotObs) {
 		fObs->Draw("AL");
 		fObs->GetXaxis()->SetTitle(xaxname);
+		fObs->GetXaxis()->SetTitleSize(0.04);
 		fObs->GetYaxis()->SetTitle(Form("CL_{%s}", (fUseCLs ? "s" : "s+b")));
-		fObs->GetYaxis()->SetTitleOffset(1.0);
+		fObs->GetYaxis()->SetTitleSize(0.05);
+		fObs->GetYaxis()->SetTitleOffset(0.7);
 	} else {
 		gr = fSMBands ? fG0SM : fG0Bkg;
 		gr->Draw("AL");
 		gr->GetXaxis()->SetTitle(xaxname);
+		gr->GetXaxis()->SetTitleSize(0.04);
 		gr->GetYaxis()->SetTitle(Form("CL_{%s}", (fUseCLs ? "s" : "s+b")));
-		gr->GetYaxis()->SetTitleOffset(1.0);
+		gr->GetYaxis()->SetTitleSize(0.05);
+		gr->GetYaxis()->SetTitleOffset(0.7);
 	}
 	mg->Draw("");
 	if (fPlotObs) {
@@ -694,6 +700,12 @@ void clsPlotter::plot(double cl)
 	
 	// draw legend
 	leg->Draw();
+
+	// draw stamp
+	t.SetNDC(kTRUE);
+	t.SetTextSize(0.04);
+	t.DrawLatex(0.1,0.91,"CMS, 20+5fb^{-1}");
+	t.DrawLatex(0.67,0.91,"");
 	
 	gPad->RedrawAxis();
 } // plot()
