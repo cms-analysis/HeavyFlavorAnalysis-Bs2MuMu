@@ -139,7 +139,7 @@ class pdf_fitData : public pdf_analysis {
     void plot_hypotest(HypoTestResult * hts);
 
     TH2D* frameTH2D(TH2D *in, double threshold);
-    TList * contourFromTH2(TH2 *h2in, double threshold, int minPoints=20);
+    //TList * contourFromTH2(TH2 *h2in, double threshold, int minPoints=20);
 
 
 };

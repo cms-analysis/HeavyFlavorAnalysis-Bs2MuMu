@@ -811,10 +811,58 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
   RooAddPdf wpdfsemi("wpdfsemi", "", semipdflist, semicoeflist);
   RooAddPdf wpdfcomb("wpdfcomb", "", combpdflist, combcoeflist);
 
+  //sum of b_s and b_d pdfs
+  RooArgList totalsigpdflist;
+  totalsigpdflist.add(bspdflist);
+  totalsigpdflist.add(bdpdflist);
+
+  RooArgList totalsigcoeflist;
+  totalsigcoeflist.add(bscoeflist);
+  totalsigcoeflist.add(bdcoeflist);  
+  
+  RooAddPdf wsigsum("wsigsum","",totalsigpdflist,totalsigcoeflist);
+  
+  //sum of bkg pdfs
+  RooArgList totalbkgpdflist;
+  totalbkgpdflist.add(peakpdflist);
+  totalbkgpdflist.add(semipdflist);
+  totalbkgpdflist.add(combpdflist);
+  
+  RooArgList totalbkgcoeflist;
+  totalbkgcoeflist.add(peakcoeflist);
+  totalbkgcoeflist.add(semicoeflist);
+  totalbkgcoeflist.add(combcoeflist);  
+  
+  RooAddPdf wbkgsum("wbkgsum","",totalbkgpdflist,totalbkgcoeflist);
+  double fullbkgnorm = wbkgsum.expectedEvents(*ws->var(var.c_str()));
+  
+  int bins = 25;
+    
+  //histogram of weigthted data
+  TH1 *wdatahist = wdata.createHistogram("wdatahist",*ws->var(var.c_str()),Binning(bins,ws->var(var.c_str())->getMin(),ws->var(var.c_str())->getMax()));
+  
+  //histgram of sum of bkg pdfs
+  TH1 *wbkghist = wbkgsum.createHistogram("wbkghist",*ws->var(var.c_str()),Binning(bins,ws->var(var.c_str())->getMin(),ws->var(var.c_str())->getMax()));
+  wbkghist->Scale(fullbkgnorm/wbkghist->GetSumOfWeights());
+  
+//   TCanvas *csubtest = new TCanvas;
+//   //wdatahist->Draw("E");
+//   wbkghist->Draw("Hist");
+//   csubtest->SaveAs("csubtest.eps");
+  
+ // return;
+  
+  //subtract background contribution without changing the error on each bin
+  for (int ibin=1; ibin<(wdatahist->GetNbinsX()+1); ++ibin) {
+    wdatahist->SetBinContent(ibin, wdatahist->GetBinContent(ibin) - wbkghist->GetBinContent(ibin));
+  }
+  
+  RooDataHist wdatasub("wdatasub","",*ws->var(var.c_str()),wdatahist);
+  
+  
   bool plotpdfs = true;
 
   //final weighted plot
-  int bins = 25;
   RooPlot* final_p = ws->var(var.c_str())->frame(Bins(bins));
 
   wdata.plotOn(final_p, Invisible(), Name("data"));
@@ -887,6 +935,52 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
   final_c->Print( (output_name + (simul_all_? "_simulBdt" : "") + ".pdf").c_str() );
   delete final_c;
   delete final_p;
+  
+  
+  
+  //background-subtracted plot
+  
+  RooPlot* final_psub = ws->var(var.c_str())->frame(Bins(bins));
+
+  //wdatasub.plotOn(final_psub, Invisible(), Name("data"), DataError(RooAbsData::SumW2));
+  final_psub->SetTitle("");
+  double sigsumpdfnorm = wsigsum.expectedEvents(*ws->var(var.c_str()));
+  if (plotpdfs) wsigsum.plotOn(final_psub, Normalization(sigsumpdfnorm, RooAbsReal::NumEvent), LineColor(kBlue), LineWidth(3), NumCPU(16), Name("sigpdf"));
+  cout << "full printed" << endl;
+
+  if (plotpdfs) wpdfbs.plotOn(final_psub, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kRed),           FillStyle(3001), NumCPU(16), Name("bs"));
+  cout << "bs printed" << endl;
+
+  if (plotpdfs) wpdfbd.plotOn(final_psub, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kViolet - 4),    FillStyle(3001), NumCPU(16), Name("bd"));
+  cout << "bd printed" << endl;
+
+  
+  wdatasub.plotOn(final_psub, DataError(RooAbsData::SumW2));
+
+  final_psub->GetYaxis()->SetTitle("S/(S+B) Weighted Events / ( 0.04 GeV)");
+  final_psub->GetYaxis()->SetTitleOffset(1.2);
+  final_psub->GetXaxis()->SetTitleOffset(1.2);
+  final_psub->GetXaxis()->SetLabelOffset(0.01);
+
+  TCanvas* final_csub = new TCanvas("final_csub", "final_csub", 600, 600);
+  final_psub->SetMinimum(0);
+  if (wdatahist->GetMinimum()) {
+    final_psub->SetMinimum(1.5*wdatahist->GetMinimum());
+  }
+  final_psub->Draw();
+  //wdatahist->Draw("ESAME");
+  Tlatex.DrawLatex(0.1,0.91, latex_s.c_str());
+  final_csub->Update();  
+  
+  string output_name_sub = "fig/data_weighted_sub";
+  final_csub->Print( (output_name_sub + (simul_all_? "_simulBdt" : "") + ".gif").c_str() );
+  final_csub->Print( (output_name_sub + (simul_all_? "_simulBdt" : "") + ".pdf").c_str() );
+  delete final_csub;
+  delete final_psub;  
+  
+    
+  
+  
 
   RooArgList siglist(bscoeflist);
   siglist.add(bdcoeflist);
@@ -2298,47 +2392,47 @@ TH2D* pdf_fitData::frameTH2D(TH2D *in, double threshold){
 #endif
 }
 
-void pdf_fitData::contourFromTH2(TH2 *h2in, double threshold, int minPoints) {
-    std::cout << "Getting contour at threshold " << threshold << " from " << h2in->GetName() << std::endl;
-    //http://root.cern.ch/root/html/tutorials/hist/ContourList.C.html
-    Double_t contours[1];
-    contours[0] = threshold;
-    if (h2in->GetNbinsX() * h2in->GetNbinsY() > 10000) minPoints = 50;
-
-    TH2D *h2 = frameTH2D((TH2D*)h2in,threshold);
-
-    h2->SetContour(1, contours);
-
-    // Draw contours as filled regions, and Save points
-    TCanvas *c = new TCanvas("c","c",600, 600);
-    h2->Draw("CONT Z LIST");
-//    gPad->Update(); // Needed to force the plotting and retrieve the contours in TGraphs
-
-    c->Print((get_address("doubleprofileLL", "", false) + ".gif").c_str());
-    c->Print((get_address("doubleprofileLL", "", false) + ".pdf").c_str());
-    c->Print((get_address("doubleprofileLL", "", false) + ".root").c_str());
-
-    // Get Contours
-//    TObjArray *conts = (TObjArray*)gROOT->GetListOfSpecials()->FindObject("contours");
-//    TList* contLevel = NULL;
-//
-//    if (conts == NULL || conts->GetSize() == 0){
-//        printf("*** No Contours Were Extracted!\n");
-//        return 0;
-//    }
-//
-//    TList *ret = new TList();
-//    for(int i = 0; i < conts->GetSize(); i++){
-//        contLevel = (TList*)conts->At(i);
-//        printf("Contour %d has %d Graphs\n", i, contLevel->GetSize());
-//        for (int j = 0, n = contLevel->GetSize(); j < n; ++j) {
-//            TGraph *gr1 = (TGraph*) contLevel->At(j);
-//            if (gr1->GetN() > minPoints) ret->Add(gr1->Clone());
-//            //break;
-//        }
-//    }
-//    return ret;
-}
+// TList * pdf_fitData::contourFromTH2(TH2 *h2in, double threshold, int minPoints) {
+//     std::cout << "Getting contour at threshold " << threshold << " from " << h2in->GetName() << std::endl;
+//     //http://root.cern.ch/root/html/tutorials/hist/ContourList.C.html
+//     Double_t contours[1];
+//     contours[0] = threshold;
+//     if (h2in->GetNbinsX() * h2in->GetNbinsY() > 10000) minPoints = 50;
+// 
+//     TH2D *h2 = frameTH2D((TH2D*)h2in,threshold);
+// 
+//     h2->SetContour(1, contours);
+// 
+//     // Draw contours as filled regions, and Save points
+//     TCanvas *c = new TCanvas("c","c",600, 600);
+//     h2->Draw("CONT Z LIST");
+// //    gPad->Update(); // Needed to force the plotting and retrieve the contours in TGraphs
+// 
+//     c->Print((get_address("doubleprofileLL", "", false) + ".gif").c_str());
+//     c->Print((get_address("doubleprofileLL", "", false) + ".pdf").c_str());
+//     c->Print((get_address("doubleprofileLL", "", false) + ".root").c_str());
+// 
+//     // Get Contours
+// //    TObjArray *conts = (TObjArray*)gROOT->GetListOfSpecials()->FindObject("contours");
+// //    TList* contLevel = NULL;
+// //
+// //    if (conts == NULL || conts->GetSize() == 0){
+// //        printf("*** No Contours Were Extracted!\n");
+// //        return 0;
+// //    }
+// //
+// //    TList *ret = new TList();
+// //    for(int i = 0; i < conts->GetSize(); i++){
+// //        contLevel = (TList*)conts->At(i);
+// //        printf("Contour %d has %d Graphs\n", i, contLevel->GetSize());
+// //        for (int j = 0, n = contLevel->GetSize(); j < n; ++j) {
+// //            TGraph *gr1 = (TGraph*) contLevel->At(j);
+// //            if (gr1->GetN() > minPoints) ret->Add(gr1->Clone());
+// //            //break;
+// //        }
+// //    }
+// //    return ret;
+// }
 
 void pdf_fitData::doublescan() {
 	// Construct unbinned likelihood
