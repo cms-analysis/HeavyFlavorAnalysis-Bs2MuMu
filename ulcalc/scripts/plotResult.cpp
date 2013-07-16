@@ -278,10 +278,10 @@ void clsPlotter::print(double cl)
 			vals.push_back(make_pair(x,y));
 	}
 	ulFromPoints(testSize,&vals,&ul,&ll);
-	cout << "UL("<< fPOI << ") = " << ul*theoreticalBF << "\t(" << ul << ") @ " << (int)(cl * 100.) << " % CL" << endl;
+	cout << "UL("<< fPOI << ") = " << ul << " @ " << (int)(cl * 100.) << " % CL" << endl;
 	if (!fUseCLs) {
-		cout << "LL(" << fPOI << ") = " << ll*theoreticalBF << "\t(" << ll << ") @ " << (int)(cl*100.) << " % CL" << endl;
-		cout << Form("BF(%s) = %e + %e - %e\t(%e + %e - %e)", fPOI.c_str(), bf*theoreticalBF, (ul-bf)*theoreticalBF, (bf-ll)*theoreticalBF, bf, ul-bf, bf-ll) << endl;
+		cout << "LL(" << fPOI << ") = " << ll << " @ " << (int)(cl*100.) << " % CL" << endl;
+		cout << Form("BF(%s) = %e + %e - %e", fPOI.c_str(), bf*theoreticalBF, ul-bf*theoreticalBF, bf-ll*theoreticalBF) << endl;
 	}
 	
 	if(latexFile) {
@@ -337,8 +337,8 @@ void clsPlotter::print(double cl)
 	}
 	ulFromPoints(testSize,&vals,&smMi,NULL);
 	
-	if (fUseCLs)	cout << "EXP_SM[UL(" << fPOI << ")] = " << ul*theoreticalBF << "+" << (smPl-ul)*theoreticalBF << "-" << (ul-smMi)*theoreticalBF << "\t(" << ul << "+" << smPl-ul << "-" << (ul-smMi) << ")" << endl;
-	else			cout << "EXP_SM[BF(" << fPOI << ")] = " << theoreticalBF << "+" << (ul-1.)*theoreticalBF << "-" << (1.-ll)*theoreticalBF << "\t(" << 1. << "+" << ul-1. << "-" << 1.-ll << ")" << endl;
+	if (fUseCLs)	cout << "EXP_SM[UL(" << fPOI << ")] = " << ul << "+" << smPl-ul << "-" << ul-smMi << endl;
+	else		cout << "EXP_SM[BF(" << fPOI << ")] = " << theoreticalBF << "+" << ul-theoreticalBF << "-" << theoreticalBF-ll << endl;
 	
 	if (latexFile) {
 		if (fUseCLs) {
@@ -395,7 +395,7 @@ void clsPlotter::print(double cl)
 	}
 	ulFromPoints(testSize,&vals,&smMi,NULL);
 	
-	if(fUseCLs) cout << "EXP_Bkg[UL(" << fPOI << ")] = " << ul*theoreticalBF << "+" << (smPl-ul)*theoreticalBF << "-" << (ul-smMi)*theoreticalBF << "\t(" << ul << "+" << smPl-ul << "-" << (ul-smMi) << ")" << endl;
+	if(fUseCLs) cout << "EXP_Bkg[UL(" << fPOI << ")] = " << ul << "+" << smPl-ul << "-" << ul-smMi << endl;
 	if (latexFile && fUseCLs) {
 		smPl = smPl - ul; smMi = ul - smMi;
 		ul *= theoreticalBF; smPl *= theoreticalBF; smMi *= theoreticalBF;
@@ -675,15 +675,15 @@ void clsPlotter::plot(double cl)
 		fObs->GetXaxis()->SetTitle(xaxname);
 		fObs->GetXaxis()->SetTitleSize(0.04);
 		fObs->GetYaxis()->SetTitle(Form("CL_{%s}", (fUseCLs ? "s" : "s+b")));
-		fObs->GetYaxis()->SetTitleSize(0.05);
-		fObs->GetYaxis()->SetTitleOffset(0.7);
+		fObs->GetYaxis()->SetTitleSize(0.06);
+		fObs->GetYaxis()->SetTitleOffset(0.5);
 	} else {
 		gr = fSMBands ? fG0SM : fG0Bkg;
 		gr->Draw("AL");
 		gr->GetXaxis()->SetTitle(xaxname);
 		gr->GetXaxis()->SetTitleSize(0.04);
 		gr->GetYaxis()->SetTitle(Form("CL_{%s}", (fUseCLs ? "s" : "s+b")));
-		gr->GetYaxis()->SetTitleSize(0.05);
+		gr->GetYaxis()->SetTitleSize(0.06);
 		gr->GetYaxis()->SetTitleOffset(0.7);
 	}
 	mg->Draw("");
@@ -704,9 +704,8 @@ void clsPlotter::plot(double cl)
 	// draw stamp
 	t.SetNDC(kTRUE);
 	t.SetTextSize(0.04);
-	t.DrawLatex(0.1,0.91,"CMS, 20+5fb^{-1}");
-	t.DrawLatex(0.67,0.91,"");
-	
+	t.DrawLatex(0.1,0.91,"CMS");
+	t.DrawLatex(0.53,0.91,"L = 5fb^{-1} (7TeV) + 20fb^{-1} (8TeV)");
 	gPad->RedrawAxis();
 } // plot()
 
