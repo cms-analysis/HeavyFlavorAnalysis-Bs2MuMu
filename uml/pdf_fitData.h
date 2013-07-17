@@ -18,6 +18,7 @@
 #include "RooLognormal.h"
 #include "TLegendEntry.h"
 #include "TLatex.h"
+#include "TPolyMarker.h"
 
 #include "RooStats/ModelConfig.h"
 #include "RooStats/ProfileLikelihoodCalculator.h"
@@ -54,7 +55,7 @@ class pdf_fitData : public pdf_analysis {
     RooDataHist* global_datahist;
     RooSimultaneous* simul_pdf;
 
-    RooFitResult* fit_pdf(bool do_not_import = false, string pdf_name = "");
+    RooFitResult* fit_pdf(bool do_not_import = false, string pdf_name = "", int strategy = 2, bool extconstr = true);
     void significance();
     void save();
 
@@ -81,6 +82,8 @@ class pdf_fitData : public pdf_analysis {
     bool freeze;
     bool stat_only_;
     bool doubleNull;
+
+    void save_for_cls();
 
   protected:
 
@@ -137,10 +140,6 @@ class pdf_fitData : public pdf_analysis {
     void make_models();
 
     void plot_hypotest(HypoTestResult * hts);
-
-    TH2D* frameTH2D(TH2D *in, double threshold);
-    //TList * contourFromTH2(TH2 *h2in, double threshold, int minPoints=20);
-
 
 };
 
