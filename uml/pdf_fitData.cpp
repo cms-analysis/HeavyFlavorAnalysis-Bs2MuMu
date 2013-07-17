@@ -2309,9 +2309,11 @@ void pdf_fitData::profile_NLL() {
 
   // Construct unbinned likelihood
   RooArgSet ext_constr( *ws_->pdf("fs_over_fu_gau"), *ws_->pdf("one_over_BRBR_gau"));
-  RooAbsReal* nll = ws_->pdf(pdfname.c_str())->createNLL(*global_data, NumCPU(16), Extended(), Strategy(2), Hesse(1)/*, ExternalConstraints(ext_constr)*/) ;
+  RooAbsReal* nll = ws_->pdf(pdfname.c_str())->createNLL(*global_data, NumCPU(16), Extended(), Strategy(2), Hesse(1), ExternalConstraints(ext_constr)) ;
   // Minimize likelihood w.r.t all parameters before making plots
+  RooMinuit(*nll).setStrategy(2);
   RooMinuit(*nll).migrad() ;
+//  RooMinuit(*nll).hesse() ;
 
   string var_alt("BF_bs");
   if (Bd) var_alt = "BF_bd";
@@ -2319,7 +2321,7 @@ void pdf_fitData::profile_NLL() {
 
   RooFormulaVar* double_pll = new RooFormulaVar("double_pll", "double_pll", "2*@0", RooArgList(*pll));
   // Plot the profile likelihood
-  RooPlot* frame = ws_->var(var_alt.c_str())->frame(Bins(20), Range(0, Bd ? 1e-9 : 5e-9), Title(Form("profileLL in %s", var_alt.c_str()))) ;
+  RooPlot* frame = ws_->var(var_alt.c_str())->frame(Bins(100), Range(0, Bd ? 1e-9 : 5e-9), Title(Form("profileLL in %s", var_alt.c_str()))) ;
 
 //  double_pll->plotOn(frame, LineColor(kRed), ShiftToZero()) ;
 //  nll0.plotOn(frame, ShiftToZero()) ;
@@ -2361,7 +2363,8 @@ void pdf_fitData::profile_NLL() {
 
 void pdf_fitData::doublescan() {
 	// Construct unbinned likelihood
-	RooAbsReal* nll = ws_->pdf(pdfname.c_str())->createNLL(*global_data, NumCPU(16), Extended()) ;
+	RooArgSet ext_constr( *ws_->pdf("fs_over_fu_gau"), *ws_->pdf("one_over_BRBR_gau"));
+	RooAbsReal* nll = ws_->pdf(pdfname.c_str())->createNLL(*global_data, NumCPU(16), Extended(), ExternalConstraints(ext_constr)) ;
 	// Minimize likelihood w.r.t all parameters before making plots
 	RooMinuit(*nll).migrad() ;
 
@@ -2376,9 +2379,9 @@ void pdf_fitData::doublescan() {
 
    TCanvas *c = new TCanvas("c","c",600, 600);
 
-   h2dpll->GetYaxis()->SetTitle("B_{d}#rightarrow#mu^{+}#mu^{-} branching fraction");
+   h2dpll->GetYaxis()->SetTitle("B^{0}#rightarrow#mu^{+}#mu^{-} branching fraction");
    h2dpll->GetYaxis()->SetTitleOffset(1.);
-   h2dpll->GetXaxis()->SetTitle("B_{s}#rightarrow#mu^{+}#mu^{-} branching fraction");
+   h2dpll->GetXaxis()->SetTitle("B^{0}_{s}#rightarrow#mu^{+}#mu^{-} branching fraction");
    h2dpll->GetXaxis()->SetTitleOffset(1.);
    h2dpll->GetXaxis()->SetLabelOffset(0.01);
    h2dpll->SetStats(0);
