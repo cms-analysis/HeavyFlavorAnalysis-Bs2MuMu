@@ -1683,10 +1683,10 @@ void pdf_analysis::setSBslope(string pdf, RooAbsData *sb_data) {
 
 string pdf_analysis::get_title(int i) {
 	string output(" ");
-	if (i == 0) output = "CMS - L = 5 fb^{-1} #sqrt{s} = 7 TeV - Barrel 2011";
-	if (i == 1) output = "CMS - L = 5 fb^{-1} #sqrt{s} = 7 TeV - Endcap 2011";
-	if (i == 2) output = "CMS - L = 20 fb^{-1} #sqrt{s} = 8 TeV - Barrel 2012";
-	if (i == 3) output = "CMS - L = 20 fb^{-1} #sqrt{s} = 8 TeV - Endcap 2012";
+	if (i == 0) output = "CMS - L = 5 fb^{-1} #sqrt{s} = 7 TeV - Barrel";
+	if (i == 1) output = "CMS - L = 5 fb^{-1} #sqrt{s} = 7 TeV - Endcap";
+	if (i == 2) output = "CMS - L = 20 fb^{-1} #sqrt{s} = 8 TeV - Barrel";
+	if (i == 3) output = "CMS - L = 20 fb^{-1} #sqrt{s} = 8 TeV - Endcap";
 	return output;
 }
 

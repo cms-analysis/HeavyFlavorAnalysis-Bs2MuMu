@@ -306,7 +306,9 @@ RooFitResult* pdf_fitData::fit_pdf(bool do_not_import, string pdf_name, int stra
   global_data->Print();
   ws_->pdf(pdf_name.c_str())->Print();
   RooArgSet ext_constr( *ws_->pdf("fs_over_fu_gau"), *ws_->pdf("one_over_BRBR_gau"));
+//  RooArgSet ext_constr( *ws_->pdf("fs_over_fu_gau"), *ws_->pdf("one_over_BRBR_gau"), *ws_->pdf("BF_bd_over_bs_gau"));
   RFR = ws_->pdf(pdf_name.c_str())->fitTo(*global_data, extconstr ? ExternalConstraints(ext_constr) : RooCmdArg::none() , Strategy(strategy) ,Extended(), Save(1), minos ? Minos(RooArgSet(*ws_->var("BF_bs"), *ws_->var("BF_bd"))) : Minos(0), Hesse(1));
+//  RFR = ws_->pdf(pdf_name.c_str())->fitTo(*global_data, extconstr ? ExternalConstraints(ext_constr) : RooCmdArg::none() , Strategy(strategy) ,Extended(), Save(1), minos ? Minos(RooArgSet(*ws_->var("BF_bs"), *ws_->var("BF_bd_over_bs"))) : Minos(0), Hesse(1));
   if (!do_not_import) ws_->import(*global_data);
   if (verbosity > 0) RFR->Print();
 
@@ -387,6 +389,10 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
   std::vector<double> ssbweights;
   std::vector<double> bsnorms;
 
+//  TCanvas megacanvas("megacanvas", "megacanvas", 1800, 1350);
+//  if (simul_all_ || simul_bdt_) megacanvas.Divide(4, 3);
+//  else megacanvas.Divide(4);
+
   for (int i = 0; i < channels; i++) {
   	if (var.find("bdt") != string::npos) var = name("bdt", i);
   	if (years_ == "0" && i > 1) break;
@@ -412,8 +418,8 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
         slice_set.add(*ws->cat("etacat"));
         projw_set.add(*ws->cat("etacat"));
         cut = Form("etacat==etacat::etacat_%d&&bdtcat==bdtcat::bdtcat_%d", i, j);
-        title = Form("%s - BDT bin %d", get_title(i).c_str(), j);
-//        title = get_title(i);
+//        title = Form("%s - BDT bin %d", get_title(i).c_str(), j);
+        title = get_title(i);
         slice_set.add(*ws->cat("bdtcat"));
         projw_set.add(*ws->cat("bdtcat"));
       }
@@ -421,8 +427,8 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
         slice_set.add(*ws->cat("allcat"));
         projw_set.add(*ws->cat("allcat"));
         cut = Form("allcat==allcat::allcat_%d", super_index(i, j));
-        title = Form("%s - BDT bin %d", get_title(i).c_str(), j);
-//        title = get_title(i);
+//        title = Form("%s - BDT bin %d", get_title(i).c_str(), j);
+        title = get_title(i);
       }
       int bins = 25;
       if (pee) projw_set.add(*ws->var("ReducedMassRes"));
@@ -531,7 +537,7 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
       Tlatex_i.SetTextAlign(11);
       Tlatex_i.SetNDC();
       Tlatex_i.DrawLatex(0.1,0.91, title.c_str());
-//      if (simul_all_ || simul_bdt_) Tlatex_i.DrawLatex(0.75,0.85, Form("BDT bin %d", j));
+      if (simul_all_ || simul_bdt_) Tlatex_i.DrawLatex(0.15,0.85, Form("%.2f < BDT < %.2f", bdt_boundaries[i][j], bdt_boundaries[i][j+1]));
       if (legend) {
       	final_c->Update();
       	TLegend *leg1 = new TLegend(0.55,0.62,0.86,0.87);
@@ -556,6 +562,13 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
       	leg1->AddEntry(final_p->findObject("peak"),"peaking bkg","L");
       	leg1->Draw();
       }
+
+//      megacanvas.cd(super_index(i, j) + 1);
+//      final_p->Draw();
+//      histo_data->Draw("esame");
+//      Tlatex_i.DrawLatex(0.1,0.91, title.c_str());
+//      if (simul_all_ || simul_bdt_) Tlatex_i.DrawLatex(0.15,0.85, Form("%.2f < BDT < %.2f", bdt_boundaries[i][j], bdt_boundaries[i][j+1]));
+
 
 
       //compute s/(s+b) weights
@@ -692,8 +705,9 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
       string output_name;
       if (output == "") output_name = get_address("data_" + var, "", true);
       else output_name = get_address(pdfname, output, true);
-      final_c->Print( (output_name + ".gif").c_str() );
+//      final_c->Print( (output_name + ".gif").c_str() );
       final_c->Print( (output_name + ".pdf").c_str() );
+      final_c->Print( (output_name + ".png").c_str() );
       delete final_p;
       delete final_c;
 
@@ -716,6 +730,8 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
       cout << "channel " << i << " " << j << "  entries =" << rds_->sumEntries(cut.c_str()) << endl;
     }
   }
+
+//  megacanvas.Print((get_address("megacanvas_" + var, "", false) + ".pdf").c_str());
 
 
   TLatex Tlatex;
@@ -888,11 +904,13 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
   cout << "full printed" << endl;
 
   double bsnorm = wpdfbs.expectedEvents(*ws->var(var.c_str()));
-  if (plotpdfs) wpdfbs.plotOn(final_p, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kRed),           FillStyle(3001), NumCPU(16), Name("bs"));
+  if (plotpdfs) wpdfbs.plotOn(final_p, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kRed),           FillStyle(3365), NumCPU(16), Name("bs"));
+  if (plotpdfs) wpdfbs.plotOn(final_p, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kRed), LineWidth(2), LineStyle(1), NumCPU(16));
   cout << "bs printed" << endl;
 
   double bdnorm = wpdfbd.expectedEvents(*ws->var(var.c_str()));
-  if (plotpdfs) wpdfbd.plotOn(final_p, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kViolet - 4),    FillStyle(3001), NumCPU(16), Name("bd"));
+  if (plotpdfs) wpdfbd.plotOn(final_p, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kViolet - 4),    FillStyle(3344), NumCPU(16), Name("bd"));
+  if (plotpdfs) wpdfbd.plotOn(final_p, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kViolet - 4),  LineWidth(2), LineStyle(1), NumCPU(16));
   cout << "bd printed" << endl;
 
   double peaknorm = wpdfpeak.expectedEvents(*ws->var(var.c_str()));
@@ -932,16 +950,16 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
   	data_entry->SetMarkerStyle(20);
   	leg1->AddEntry(data_entry, "data", "lep");
   	leg1->AddEntry(final_p->findObject("fullpdf"),"full PDF","L");
-  	TLegendEntry *bs_entry = new TLegendEntry(final_p->findObject("bs"), "B_{s}#rightarrow#mu^{+}#mu^{-}", "f");
+  	TLegendEntry *bs_entry = new TLegendEntry(final_p->findObject("bs"), "B^{0}_{s}#rightarrow#mu^{+}#mu^{-}", "f");
   	bs_entry->SetLineColor(kRed);
   	bs_entry->SetFillColor(kRed);
-  	bs_entry->SetFillStyle(3001);
-  	leg1->AddEntry(bs_entry,"B_{s}#rightarrow#mu^{+}#mu^{-}","f");
-  	TLegendEntry *bd_entry = new TLegendEntry(final_p->findObject("bd"), "B_{d}#rightarrow#mu^{+}#mu^{-}", "f");
+  	bs_entry->SetFillStyle(3365);
+  	leg1->AddEntry(bs_entry,"B^{0}_{s}#rightarrow#mu^{+}#mu^{-}","f");
+  	TLegendEntry *bd_entry = new TLegendEntry(final_p->findObject("bd"), "B^{0}#rightarrow#mu^{+}#mu^{-}", "f");
   	bd_entry->SetLineColor(kViolet - 4);
   	bd_entry->SetFillColor(kViolet - 4);
-  	bd_entry->SetFillStyle(3001);
-  	leg1->AddEntry(bd_entry,"B_{d}#rightarrow#mu^{+}#mu^{-}","f");
+  	bd_entry->SetFillStyle(3344);
+  	leg1->AddEntry(bd_entry,"B^{0}#rightarrow#mu^{+}#mu^{-}","f");
   	leg1->AddEntry(final_p->findObject("comb"),"combinatorial bkg","L");
   	leg1->AddEntry(final_p->findObject("semi"),"semileptonic bkg","L");
   	leg1->AddEntry(final_p->findObject("peak"),"peaking bkg","L");
@@ -949,11 +967,13 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
   }
 
   string output_name = "fig/data_weighted";
-  final_c->Print( (output_name + (simul_all_? "_simulBdt" : "") + ".gif").c_str() );
+//  final_c->Print( (output_name + (simul_all_? "_simulBdt" : "") + ".gif").c_str() );
   final_c->Print( (output_name + (simul_all_? "_simulBdt" : "") + ".pdf").c_str() );
+  final_c->Print( (output_name + (simul_all_? "_simulBdt" : "") + ".png").c_str() );
   delete final_c;
   delete final_p;
 
+  return;
   //background-subtracted plot
 
   RooPlot* final_psub = ws->var(var.c_str())->frame(Bins(bins));
@@ -961,17 +981,19 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
   //wdatasub.plotOn(final_psub, Invisible(), Name("data"), DataError(RooAbsData::SumW2));
   final_psub->SetTitle("");
   double sigsumpdfnorm = wsigsum.expectedEvents(*ws->var(var.c_str()));
-  if (plotpdfs) wsigsum.plotOn(final_psub, Normalization(sigsumpdfnorm, RooAbsReal::NumEvent), LineColor(kBlue), LineWidth(3), NumCPU(16), Name("sigpdf"));
+  if (plotpdfs) wsigsum.plotOn(final_psub, Normalization(sigsumpdfnorm, RooAbsReal::NumEvent), LineColor(kBlue), LineWidth(3), NumCPU(16), Name("fullpdf"));
   cout << "full printed" << endl;
 
-  if (plotpdfs) wpdfbs.plotOn(final_psub, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kRed),           FillStyle(3001), NumCPU(16), Name("bs"));
+  if (plotpdfs) wpdfbs.plotOn(final_psub, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kRed),           FillStyle(3365), NumCPU(16), Name("bs"));
+  if (plotpdfs) wpdfbs.plotOn(final_psub, Normalization(bsnorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kRed), LineWidth(2), LineStyle(1), NumCPU(16));
   cout << "bs printed" << endl;
 
-  if (plotpdfs) wpdfbd.plotOn(final_psub, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kViolet - 4),    FillStyle(3001), NumCPU(16), Name("bd"));
+  if (plotpdfs) wpdfbd.plotOn(final_psub, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("F"), FillColor(kViolet - 4),    FillStyle(3344), NumCPU(16), Name("bd"));
+  if (plotpdfs) wpdfbd.plotOn(final_psub, Normalization(bdnorm, RooAbsReal::NumEvent), DrawOption("L"), LineColor(kViolet - 4), LineWidth(2), LineStyle(1), NumCPU(16));
   cout << "bd printed" << endl;
 
 
-  wdatasub.plotOn(final_psub, DataError(RooAbsData::SumW2));
+  wdatasub.plotOn(final_psub, DataError(RooAbsData::SumW2), Name("datasub"));
 
   final_psub->GetYaxis()->SetTitle("S/(S+B) Weighted Events / ( 0.04 GeV)");
   final_psub->GetYaxis()->SetTitleOffset(1.2);
@@ -987,6 +1009,25 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
   //wdatahist->Draw("ESAME");
   Tlatex.DrawLatex(0.1,0.91, latex_s.c_str());
   final_csub->Update();
+
+  TLegend *legsub = new TLegend(0.60,0.63,0.88,0.87);
+  legsub->SetFillColor(kWhite);
+  legsub->SetLineColor(kWhite);
+  TLegendEntry *data_entry_sub = new TLegendEntry(final_psub->findObject("datasub"), "data", "lep");
+  data_entry_sub->SetMarkerStyle(20);
+  legsub->AddEntry(data_entry_sub, "background subtracted data", "lep");
+  legsub->AddEntry(final_psub->findObject("fullpdf"),"full PDF","L");
+	TLegendEntry *bs_sub_entry = new TLegendEntry(final_psub->findObject("bs"), "B^{0}_{s}#rightarrow#mu^{+}#mu^{-}", "f");
+	bs_sub_entry->SetLineColor(kRed);
+	bs_sub_entry->SetFillColor(kRed);
+	bs_sub_entry->SetFillStyle(3365); // 3001
+	legsub->AddEntry(bs_sub_entry,"B^{0}_{s}#rightarrow#mu^{+}#mu^{-}","f");
+	TLegendEntry *bd_sub_entry = new TLegendEntry(final_psub->findObject("bd"), "B^{0}#rightarrow#mu^{+}#mu^{-}", "f");
+	bd_sub_entry->SetLineColor(kViolet - 4);
+	bd_sub_entry->SetFillColor(kViolet - 4);
+	bd_sub_entry->SetFillStyle(3344); // 3001
+	legsub->AddEntry(bd_sub_entry,"B^{0}#rightarrow#mu^{+}#mu^{-}","f");
+  legsub->Draw();
 
   string output_name_sub = "fig/data_weighted_sub";
   final_csub->Print( (output_name_sub + (simul_all_? "_simulBdt" : "") + ".gif").c_str() );
@@ -1018,7 +1059,7 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
 
   RooPlot* final_pp = ws->var(var.c_str())->frame(Bins(bins));
 
-  bool plotpdfs2 = true;
+  bool plotpdfs2 = false;
   wdata.plotOn(final_pp, Invisible(), Name("data"));
   final_pp->SetTitle("");
   if (plotpdfs2) wpdftot.plotOn(final_pp, Normalization(fullsumpdfnorm, RooAbsReal::NumEvent), FillColor(kYellow), DrawOption("F"), NumCPU(16), Name("sigpdf"));
@@ -1067,55 +1108,55 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
   delete final_pp;
 
   RooPlot* final_ppp = ws->var(var.c_str())->frame(Bins(bins));
-  bool plotpdfs3 = true;
-    wdata.plotOn(final_ppp, Invisible(), Name("data"));
-    final_ppp->SetTitle("");
-    if (plotpdfs3) wpdftot.plotOn(final_ppp, Normalization(fullsumpdfnorm, RooAbsReal::NumEvent), FillColor(kYellow), DrawOption("F"), NumCPU(16), Name("sigpdf"));
-    if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(bkgpdflist), FillColor(kWhite), DrawOption("F"), NumCPU(16));
-    if (plotpdfs3) wpdftot.plotOn(final_ppp, Normalization(fullsumpdfnorm, RooAbsReal::NumEvent), LineColor(kBlack), LineWidth(3), NumCPU(16), Name("fullpdf"));
-    if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(bkgpdflist), LineStyle(2), LineColor(kBlue), NumCPU(16));
+  bool plotpdfs3 = false;
+  wdata.plotOn(final_ppp, Invisible(), Name("data"));
+  final_ppp->SetTitle("");
+  if (plotpdfs3) wpdftot.plotOn(final_ppp, Normalization(fullsumpdfnorm, RooAbsReal::NumEvent), FillColor(kYellow), DrawOption("F"), NumCPU(16), Name("sigpdf"));
+  if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(bkgpdflist), FillColor(kWhite), DrawOption("F"), NumCPU(16));
+  if (plotpdfs3) wpdftot.plotOn(final_ppp, Normalization(fullsumpdfnorm, RooAbsReal::NumEvent), LineColor(kBlack), LineWidth(3), NumCPU(16), Name("fullpdf"));
+  if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(bkgpdflist), LineStyle(2), LineColor(kBlue), NumCPU(16));
 
-    if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(bkgpdflist), FillStyle(1001), DrawOption("F"), FillColor(kOrange), NumCPU(16), Name("peakpdf"));
-    if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(bkgpdflist), LineColor(kBlack), DrawOption("L"), FillColor(kBlack), LineWidth(2), LineStyle(2), NumCPU(16));
-    if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(RooArgSet(combpdflist, semipdflist)), FillStyle(1001), DrawOption("F"), FillColor(kOrange - 9), NumCPU(16), Name("semipdf"));
-    if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(RooArgSet(combpdflist, semipdflist)), LineColor(kBlack), LineStyle(2), DrawOption("L"), LineWidth(2), FillColor(kGreen), NumCPU(16));
-    if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(combpdflist), FillStyle(1001), DrawOption("F"), FillColor(kYellow - 10), NumCPU(16), Name("combpdf"));
-    if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(combpdflist), LineColor(kBlack), LineStyle(2), DrawOption("L"), FillColor(kBlack), LineWidth(2), NumCPU(16));
-    cout << "full printed" << endl;
-    wdata.plotOn(final_ppp, DataError(RooAbsData::SumW2));
+  if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(bkgpdflist), FillStyle(1001), DrawOption("F"), FillColor(kOrange), NumCPU(16), Name("peakpdf"));
+  if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(bkgpdflist), LineColor(kBlack), DrawOption("L"), FillColor(kBlack), LineWidth(2), LineStyle(2), NumCPU(16));
+  if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(RooArgSet(combpdflist, semipdflist)), FillStyle(1001), DrawOption("F"), FillColor(kOrange - 9), NumCPU(16), Name("semipdf"));
+  if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(RooArgSet(combpdflist, semipdflist)), LineColor(kBlack), LineStyle(2), DrawOption("L"), LineWidth(2), FillColor(kGreen), NumCPU(16));
+  if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(combpdflist), FillStyle(1001), DrawOption("F"), FillColor(kYellow - 10), NumCPU(16), Name("combpdf"));
+  if (plotpdfs3) wpdftot.plotOn(final_ppp, Components(combpdflist), LineColor(kBlack), LineStyle(2), DrawOption("L"), FillColor(kBlack), LineWidth(2), NumCPU(16));
+  cout << "full printed" << endl;
+  wdata.plotOn(final_ppp, DataError(RooAbsData::SumW2));
 
-    final_ppp->GetYaxis()->SetTitle("S/(S+B) Weighted Events / ( 0.04 GeV)");
-    final_ppp->GetYaxis()->SetTitleOffset(1.);
-    final_ppp->GetXaxis()->SetTitleOffset(1.);
-    final_ppp->GetXaxis()->SetLabelOffset(0.01);
-    final_ppp->GetXaxis()->SetTitleSize(0.043);
-    final_ppp->GetYaxis()->SetTitleSize(0.043);
+  final_ppp->GetYaxis()->SetTitle("S/(S+B) Weighted Events / ( 0.04 GeV)");
+  final_ppp->GetYaxis()->SetTitleOffset(1.);
+  final_ppp->GetXaxis()->SetTitleOffset(1.);
+  final_ppp->GetXaxis()->SetLabelOffset(0.01);
+  final_ppp->GetXaxis()->SetTitleSize(0.043);
+  final_ppp->GetYaxis()->SetTitleSize(0.043);
 
-    TCanvas* final_ccc = new TCanvas("final_cc", "final_cc", 600, 600);
-    final_ppp->SetMinimum(0);
-    final_ppp->Draw();
-    Tlatex.DrawLatex(0.1,0.91, latex_s.c_str());
-    final_ccc->Update();
-    TLegend *leg3 = new TLegend(0.60,0.63,0.88,0.87);
-    leg3->SetFillColor(kWhite);
-    leg3->SetLineColor(kWhite);
-    TLegendEntry *data3_entry = new TLegendEntry(final_ppp->findObject("data"), "data", "lep");
-    data3_entry->SetMarkerStyle(20);
-    leg3->AddEntry(data3_entry, "data", "lep");
-    leg3->AddEntry(final_ppp->findObject("fullpdf"),"full PDF","L");
-    TLegendEntry *signal3_entry = new TLegendEntry(final_ppp->findObject("sigpdf"), "signals", "f");
-    signal3_entry->SetLineColor(kBlack);
-    signal3_entry->SetFillColor(kYellow);
-    signal3_entry->SetFillStyle(1001);
-    leg3->AddEntry(signal3_entry,"signals","f");
-    TLegendEntry *peak_entry = new TLegendEntry(final_ppp->findObject("peakpdf"), "peak", "f");
-    peak_entry->SetLineColor(kBlack);
-    peak_entry->SetFillColor(kOrange);
-    peak_entry->SetFillStyle(1001);
-    leg3->AddEntry(peak_entry, "peaking bkg","f");
-    TLegendEntry *semi_entry = new TLegendEntry(final_ppp->findObject("semipdf"), "semi", "f");
-    semi_entry->SetLineColor(kBlack);
-    semi_entry->SetFillColor(kOrange - 9);
+  TCanvas* final_ccc = new TCanvas("final_cc", "final_cc", 600, 600);
+  final_ppp->SetMinimum(0);
+  final_ppp->Draw();
+  Tlatex.DrawLatex(0.1,0.91, latex_s.c_str());
+  final_ccc->Update();
+  TLegend *leg3 = new TLegend(0.60,0.63,0.88,0.87);
+  leg3->SetFillColor(kWhite);
+  leg3->SetLineColor(kWhite);
+  TLegendEntry *data3_entry = new TLegendEntry(final_ppp->findObject("data"), "data", "lep");
+  data3_entry->SetMarkerStyle(20);
+  leg3->AddEntry(data3_entry, "data", "lep");
+  leg3->AddEntry(final_ppp->findObject("fullpdf"),"full PDF","L");
+  TLegendEntry *signal3_entry = new TLegendEntry(final_ppp->findObject("sigpdf"), "signals", "f");
+  signal3_entry->SetLineColor(kBlack);
+  signal3_entry->SetFillColor(kYellow);
+  signal3_entry->SetFillStyle(1001);
+  leg3->AddEntry(signal3_entry,"signals","f");
+  TLegendEntry *peak_entry = new TLegendEntry(final_ppp->findObject("peakpdf"), "peak", "f");
+  peak_entry->SetLineColor(kBlack);
+  peak_entry->SetFillColor(kOrange);
+  peak_entry->SetFillStyle(1001);
+  leg3->AddEntry(peak_entry, "peaking bkg","f");
+  TLegendEntry *semi_entry = new TLegendEntry(final_ppp->findObject("semipdf"), "semi", "f");
+  semi_entry->SetLineColor(kBlack);
+  semi_entry->SetFillColor(kOrange - 9);
     semi_entry->SetFillStyle(1001);
     leg3->AddEntry(semi_entry, "semileptonic bkg","f");
     TLegendEntry *comb_entry = new TLegendEntry(final_ppp->findObject("combpdf"), "comb", "f");
@@ -1134,7 +1175,7 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
     ///4
 
     RooPlot* final_pppp = ws->var(var.c_str())->frame(Bins(bins));
-    bool plotpdfs4 = true;
+    bool plotpdfs4 = false;
       wdata.plotOn(final_pppp, Invisible(), Name("data"));
       final_pppp->SetTitle("");
       if (plotpdfs4) wpdftot.plotOn(final_pppp, Normalization(fullsumpdfnorm, RooAbsReal::NumEvent), FillStyle(3001), FillColor(kRed), DrawOption("F"), NumCPU(16), Name("bspdf"));
@@ -1170,12 +1211,12 @@ void pdf_fitData::print_each_channel(string var, string output, RooWorkspace* ws
       bs4_entry->SetLineColor(kRed);
       bs4_entry->SetFillColor(kRed);
       bs4_entry->SetFillStyle(3001);
-      leg4->AddEntry(bs4_entry,"B_{s}#rightarrow#mu^{+}#mu^{-}","f");
+      leg4->AddEntry(bs4_entry,"B^{0}_{s}#rightarrow#mu^{+}#mu^{-}","f");
       TLegendEntry *bd4_entry = new TLegendEntry(final_pppp->findObject("bdpdf"), "signals", "f");
       bd4_entry->SetLineColor(kViolet -4);
       bd4_entry->SetFillColor(kViolet -4);
       bd4_entry->SetFillStyle(3001);
-      leg4->AddEntry(bd4_entry,"B_{s}#rightarrow#mu^{+}#mu^{-}","f");
+      leg4->AddEntry(bd4_entry,"B^{0}#rightarrow#mu^{+}#mu^{-}","f");
       TLegendEntry *bkg_entry = new TLegendEntry(final_pppp->findObject("bkgpdf"), "bkgs", "f");
       bkg_entry->SetLineColor(kBlue);
       bkg_entry->SetLineStyle(2);
@@ -1212,9 +1253,12 @@ void pdf_fitData::fill_dataset(RooDataSet* dataset, bool cut_b, vector <double> 
       bool barrel = fabs(m1eta_t)<1.4 && fabs(m2eta_t)<1.4;
       double mass = m_t;
       //mass scale: shifting data to MC pdfs
+
       if (barrel) mass = mass + 0.006;
       else mass = mass + 0.007;
+
       if (mass > 4.9 && mass < 5.9 && muid_t) {
+
       	if (me_t < 0.0 || me_t > 0.2) continue; //skip wrong mass scale
       	if (bdt_t < bdt_cut) continue;
         events++;
@@ -1330,6 +1374,25 @@ void pdf_fitData::make_pdf_input(string root_s) {
   if (!ws_input) {cout << "ws does not exist" << endl; exit(EXIT_FAILURE);}
   cout << "ws file: " << root_s << endl;
   set_ws(ws_input);
+
+  // SM value = (3.56 +/- 0.29)/(0.107 +/- 0.010)
+  // .030056 +- .0037263
+
+  RooRealVar BF_bd_over_bs("BF_bd_over_bs", "BF_bd_over_bs", .030056, 0., 1.);
+  ws_->import(BF_bd_over_bs);
+
+
+  for (int i = 0; i < channels; i++) {
+      for (int j = 0; j < bdt_index_max(i); j++) {
+
+          RooFormulaVar N_bd_constr(name("N_bd_formula_corr", i, j), "N_bd_corr(i) = BF * K(i)",  "@0*@1*@2*@3*@4", RooArgList( *ws_->var("BF_bs"), *ws_->var(name("N_bu", i, j)), *ws_->var(name("effratio_bd", i, j)), *ws_->var("one_over_BRBR"), *ws_->var("BF_bd_over_bs")));
+          ws_->import(N_bd_constr);
+
+          N_bd_constr.Print();
+
+      }
+  }
+
 }
 
 void pdf_fitData::set_starting_N() {
@@ -1395,6 +1458,12 @@ void pdf_fitData::define_perchannel_pdf () {
 void pdf_fitData::define_constraints(int i, int j) {
 
   if (i == 0 && j == 0) {
+
+    // SM value = (3.56 +/- 0.29)/(0.107 +/- 0.010)
+    // .030056 +- .0037263
+    RooGaussian BF_bd_over_bs_gau("BF_bd_over_bs_gau", "BF_bd_over_bs_gau", *ws_->var("BF_bd_over_bs"), RooConst(0.030056), RooConst(0.0037263));
+    ws_->import(BF_bd_over_bs_gau);
+
   	RooGaussian fs_over_fu_gau("fs_over_fu_gau", "fs_over_fu_gau", *ws_->var("fs_over_fu"), RooConst(fs_over_fu_val), RooConst(fs_over_fu_err));
 //  	RooLognormal fs_over_fu_gau("fs_over_fu_gau", "fs_over_fu_gau", *ws_->var("fs_over_fu"), RooConst(fs_over_fu_val), RooConst(1. + fs_over_fu_err/fs_over_fu_val));
     ws_->import(fs_over_fu_gau);
@@ -1488,6 +1557,7 @@ void pdf_fitData::define_total_extended(int i, int j, bool h) {
   else N_list.add(*ws_->var(name("N_bs", i, j)));
   if ((SM_ || bd_constr_) && BF_ < 2) N_list.add(*ws_->function(name("N_bd_constr", i, j)));
   else if (BF_ > 1) N_list.add(*ws_->function(name("N_bd_formula", i, j)));
+//  else if (BF_ > 1) N_list.add(*ws_->function(name("N_bd_formula_corr", i, j)));
   else N_list.add(*ws_->var(name("N_bd", i, j)));
 
   RooFormulaVar N_comb2(name("N_comb2", i, j), "", "@0*@0", RooArgList(*ws_->var(name("N_comb", i, j))));
@@ -2484,7 +2554,7 @@ void pdf_fitData::freeze_norm(bool set) {
 }
 
 void pdf_fitData::stat_error(bool stat_only) {
-
+	ws_->var("BF_bs")->setConstant(stat_only);
 	ws_->var("fs_over_fu")->setConstant(stat_only);
 	ws_->var("one_over_BRBR")->setConstant(stat_only);
 	for (int i = 0; i < channels; i++) {
@@ -2495,6 +2565,9 @@ void pdf_fitData::stat_error(bool stat_only) {
 
 			ws_->var(name("N_semi", i, j))->setConstant(stat_only);
 			ws_->var(name("N_peak", i, j))->setConstant(stat_only);
+
+			ws_->var(name("B_1comb", i, j))->setConstant(stat_only);
+			ws_->var(name("N_comb", i, j))->setConstant(stat_only);
 
 //			ws_->var(name("N_semi_gau_sigma", i, j))->setVal(ws_->var(name("N_semi", i, j))->getError());
 //			ws_->var(name("N_peak_gau_sigma", i, j))->setVal(1. + ws_->var(name("N_peak", i, j))->getError() / ws_->var(name("N_peak", i, j))->getVal());
