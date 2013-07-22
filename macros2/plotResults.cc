@@ -52,7 +52,7 @@ plotResults::~plotResults() {
 void plotResults::makeAll(int channels, int nevents) {
 
   if (fDoUseBDT) {
-    fStampString = "BDT preliminary"; 
+    fStampString = "CMS"; 
   } else {
     fStampString = "CNC preliminary"; 
   }
@@ -963,7 +963,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
   legg->SetHeader("CMS simulation"); 
   legg->Draw(); 
   hhRareBg->Draw("same");
-  stamp(0.18, fStampString, 0.67, fStampCms); 
+  stamp(0.18, fStampString, 0.4, fStampCms); 
   double size = tl->GetTextSize();
   tl->SetTextSize(0.07); 
   tl->DrawLatex(0.25, 0.8, (chan == 0?"Barrel":"Endcap"));   
@@ -980,7 +980,7 @@ void plotResults::calculateRareBgNumbers(int chan) {
   leggsl->SetHeader("CMS simulation"); 
   leggsl->Draw(); 
   hhslRareBg->Draw("same");
-  stamp(0.18, fStampString, 0.67, fStampCms); 
+  stamp(0.18, fStampString, 0.4, fStampCms); 
   size = tl->GetTextSize();
   tl->SetTextSize(0.07); 
   tl->DrawLatex(0.25, 0.8, (chan == 0?"Barrel":"Endcap"));   
@@ -1153,7 +1153,7 @@ void plotResults::calculateSgNumbers(int chan) {
   legg->Draw();
   
   
-  stamp(0.18, fStampString, 0.67, fStampCms); 
+  stamp(0.18, fStampString, 0.4, fStampCms); 
   if (fDoPrint)  {
     if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtsig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
     else c0->SaveAs(Form("%s/%s-cncsig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
@@ -1176,7 +1176,7 @@ void plotResults::calculateSgNumbers(int chan) {
   //   tl->DrawLatex(0.4, yleg-0.35, Form("obs: %3.0f", b0));
   //   tl->DrawLatex(0.2, 0.92, (0 == i?"Barrel":"Endcap"));
 
-  stamp(0.18, fStampString, 0.67, fStampCms); 
+  stamp(0.18, fStampString, 0.4, fStampCms); 
   if (fDoPrint)  {
     if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtunblinded-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
     else c0->SaveAs(Form("%s/%s-cncunblinded-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
@@ -1190,7 +1190,7 @@ void plotResults::calculateSgNumbers(int chan) {
   drawArrow(0.6, 1, yleg, cntBs); 
   drawArrow(0.4, 2, yleg-0.5, cntB0); 
 
-  stamp(0.18, fStampString, 0.67, fStampCms); 
+  stamp(0.18, fStampString, 0.4, fStampCms); 
   if (fDoPrint)  {
     if (fDoUseBDT) c0->SaveAs(Form("%s/%s-bdtunblinded-manybins-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));
     else c0->SaveAs(Form("%s/%s-cncunblinded-manybins-sig-data-chan%d.pdf", fDirectory.c_str(), fSuffix.c_str(), chan));

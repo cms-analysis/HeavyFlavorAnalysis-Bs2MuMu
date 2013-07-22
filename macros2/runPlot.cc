@@ -329,12 +329,6 @@ int main(int argc, char *argv[]) {
       gROOT->Clear();  gROOT->DeleteAll();
       a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
       if (!doUseBDT) a->fDoUseBDT = false; 
-      a->makeAll(2); 
-      delete a;
-
-      gROOT->Clear();  gROOT->DeleteAll();
-      a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
-      if (!doUseBDT) a->fDoUseBDT = false; 
       a->makeAll(8); 
       delete a;
 
@@ -343,6 +337,13 @@ int main(int argc, char *argv[]) {
       if (!doUseBDT) a->fDoUseBDT = false; 
       a->makeAll(16); 
       delete a;
+
+      gROOT->Clear();  gROOT->DeleteAll();
+      a = new plotEfficiencies(files.c_str(), dir.c_str(), cuts.c_str(), suffixMode);
+      if (!doUseBDT) a->fDoUseBDT = false; 
+      a->makeAll(2); 
+      delete a;
+
     }
   }
 

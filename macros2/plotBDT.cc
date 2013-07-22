@@ -103,13 +103,13 @@ plotBDT::plotBDT(const char *files, const char *dir, const char *cuts, int mode)
   feffNpvBDTchan1   = new TH1D("feffNpvBDTchan1", "feffNpvBDTchan0", 50, 0., 100.); 	   
   setTitles(feffNpvBDTchan1, "N_{PV}", "eff(b)", 0.05, 1.2, 1.5);  
   feffNpvAcBDTchan0 = new TH1D("feffNpvAcBDTchan0", "feffNpvAcBDTchan0", 50, 0., 100.);    
-  setTitles(feffNpvAcBDTchan0, "N_{PV}", "eff(b)", 0.05, 1.2, 1.5);
+  setTitles(feffNpvAcBDTchan0, "N_{PV}", "#varepsilon(b>0.0)", 0.05, 1.2, 1.5);
   feffNpvAcBDTchan1 = new TH1D("feffNpvAcBDTchan1", "feffNpvAcBDTchan0", 50, 0., 100.);    
-  setTitles(feffNpvAcBDTchan1, "N_{PV}", "eff(b)", 0.05, 1.2, 1.5);
+  setTitles(feffNpvAcBDTchan1, "N_{PV}", "#varepsilon(b>0.0)", 0.05, 1.2, 1.5);
   feffNpvAdBDTchan0 = new TH1D("feffNpvAdBDTchan0", "feffNpvAdBDTchan0", 50, 0., 100.);    
-  setTitles(feffNpvAdBDTchan0, "N_{PV}", "eff(b)", 0.05, 1.2, 1.5);
+  setTitles(feffNpvAdBDTchan0, "N_{PV}", "#varepsilon(b>0.1)", 0.05, 1.2, 1.5);
   feffNpvAdBDTchan1 = new TH1D("feffNpvAdBDTchan1", "feffNpvAdBDTchan0", 50, 0., 100.);    
-  setTitles(feffNpvAdBDTchan1, "N_{PV}", "eff(b)", 0.05, 1.2, 1.5);
+  setTitles(feffNpvAdBDTchan1, "N_{PV}", "#varepsilon(b>0.1)", 0.05, 1.2, 1.5);
 
   for (unsigned int pv = 0; pv < 50; ++pv) {
     h = new TH1D(Form("hNpvBDTChan0_%d", pv), Form("hNpvBDTChan0_%d", pv), 200, -1., 1.);
@@ -3581,21 +3581,24 @@ string plotBDT::parseXmlOption(std::string line) {
 // ----------------------------------------------------------------------
 void plotBDT::plotAndFitIt(TH1D* h, string name) {
   double npvmax(30.); 
-  double ypoint = (h->GetMaximum() > 0. ? 0.34 : 0.84); 
+  double ypoint = (h->GetMaximum() > 0. ? 0.34 : 0.77); 
   h->SetAxisRange(0., npvmax, "X");
   h->SetAxisRange(-0.4, 0.4, "Y");
   setHist(h, kBlack, 20, 2, 3); 
   h->Fit("pol0", "+");  
-  tl->DrawLatex(0.2, 0.92, Form("(n_{min} > %d)", fShow)); 
+  tl->SetTextSize(0.03); 
+  tl->DrawLatex(0.2, 0.85, Form("(n_{min} > %d)", fShow)); 
+  tl->SetTextSize(0.04); 
   if (h->GetFunction("pol0")) {
     h->GetFunction("pol0")->SetLineColor(kBlue); 
     h->GetFunction("pol0")->SetLineStyle(kDashed); 
+    tl->SetTextColor(kBlue); 
     tl->DrawLatex(0.2, ypoint, Form("p0 = %5.4f #pm %5.4f", 
 				    h->GetFunction("pol0")->GetParameter(0), 
 				    h->GetFunction("pol0")->GetParError(0))
 		  );
     
-    tl->DrawLatex(0.5, ypoint, Form("#chi^{2}/dof = %3.1f/%3d (pol0)", 
+    tl->DrawLatex(0.2, ypoint-0.04, Form("#chi^{2}/dof = %3.1f/%3d (pol0)", 
 				    h->GetFunction("pol0")->GetChisquare(), 
 				    h->GetFunction("pol0")->GetNDF())
 		  );
@@ -3605,6 +3608,7 @@ void plotBDT::plotAndFitIt(TH1D* h, string name) {
   if (h->GetFunction("pol1")) {
     h->GetFunction("pol1")->SetLineColor(kRed); 
     h->GetFunction("pol1")->SetLineStyle(kSolid); 
+    tl->SetTextColor(kRed); 
     tl->DrawLatex(0.2, ypoint-0.1, Form("p0 = %5.4f #pm %5.4f", 
 					h->GetFunction("pol1")->GetParameter(0), 
 					h->GetFunction("pol1")->GetParError(0))
@@ -3614,12 +3618,14 @@ void plotBDT::plotAndFitIt(TH1D* h, string name) {
 					 h->GetFunction("pol1")->GetParError(1))
 		  );
     
-    tl->DrawLatex(0.5, ypoint-0.1, Form("#chi^{2}/dof = %3.1f/%3d (pol1)", 
+    tl->DrawLatex(0.2, ypoint-0.18, Form("#chi^{2}/dof = %3.1f/%3d (pol1)", 
 					h->GetFunction("pol1")->GetChisquare(), 
 					h->GetFunction("pol1")->GetNDF())
 		  );
   }
   
+  tl->SetTextColor(kBlack); 
+  stamp(0.18, fStampString, 0.4, fStampCms); 
   c0->SaveAs(name.c_str()); 
 }
 

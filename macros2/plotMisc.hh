@@ -31,6 +31,7 @@ public:
   void effImpactTrkHit();
 
   void calcTauError();
+  void calcCombSlopes();
   int bdtCat(double bdt, int chan);
   void bdtCatIdx(int cat, int chan, int &hmin, int &hmax);
 

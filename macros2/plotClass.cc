@@ -19,6 +19,7 @@
 #include "TCanvas.h"
 #include "TVirtualFitter.h"
 #include "TEventList.h"
+#include "TFitResult.h"
 
 #include <iomanip>
 #include <string>
@@ -104,6 +105,10 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   // -- CMS with LHCb input
   fsfu = 0.267;
   fsfuE = 0.021;
+
+  // -- updated LHCb paper plus an ad-hoc error of 5% for pT dependence
+  fsfu = 0.256; 
+  fsfuE = 0.024;
 
   fYear = 0; 
 
@@ -284,6 +289,7 @@ plotClass::plotClass(const char *files, const char *dir, const char *cuts, int m
   fAnaCuts.addCut("fGoodIso", "I_{trk}", fGoodIso); 
   fAnaCuts.addCut("fGoodCloseTrack", "close track veto", fGoodCloseTrack); 
   fAnaCuts.addCut("fGoodDocaTrk", "d_{ca}(trk)", fGoodDocaTrk); 
+  fAnaCuts.addCut("fGoodBDT", "bdt", fGoodBDT); 
   fAnaCuts.addCut("fGoodLastCut", "lastCut", fGoodLastCut); 
 
 
@@ -1108,22 +1114,24 @@ void plotClass::init(const char *files, const char *cuts, const char *dir, int m
   
   loadFiles(files);
 
-  fStampString = "CMS, 20+5fb^{-1}"; 
+  fStampString = "CMS, L = 5 fb^{-1} (#sqrt{s} = 7 TeV), L = 20 fb^{-1} (#sqrt{s} = 8 TeV)"; 
   if (fDoUseBDT) {
     fStampString = "BDT preliminary"; 
+    fStampString = "CMS"; 
   } else {
     fStampString = "CNC preliminary"; 
+    fStampString = "CMS"; 
   }
   fStampCms = "fill me";
 
   string sfiles(files);
   if (string::npos != sfiles.find("2011")) {
     fYear = 2011; 
-    fStampCms = "#sqrt{s} = 7 TeV";
+    fStampCms = "L = 5 fb^{-1} (#sqrt{s} = 7 TeV)";
   } 
   if (string::npos != sfiles.find("2012")) {
     fYear = 2012; 
-    fStampCms = "#sqrt{s} = 8 TeV";
+    fStampCms = "L = 20 fb^{-1} (#sqrt{s} = 8 TeV)";
   } 
 
   fBDT = -99.; 
@@ -1254,8 +1262,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("default") && string::npos != stype.find("sg")) {
 	sname = "SgMc"; 
 	fF.insert(make_pair(sname, pF)); 	
-	fBF.insert(make_pair(sname, 3.2e-9)); 
-	fBFE.insert(make_pair(sname, 0.06)); 
+	fBF.insert(make_pair(sname, 3.57e-9)); 
+	fBFE.insert(make_pair(sname, 0.08)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-}")); 
@@ -1264,8 +1272,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("acc") && string::npos != stype.find("sg")) {
 	sname = "SgMcAcc"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-9)); 
-	fBFE.insert(make_pair(sname, 0.06)); 
+	fBF.insert(make_pair(sname, 3.57e-9)); 
+	fBFE.insert(make_pair(sname, 0.08)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (acc)")); 
@@ -1274,8 +1282,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("2011") && string::npos != stype.find("sg")) {
 	sname = "SgMc2011"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-9)); 
-	fBFE.insert(make_pair(sname, 0.06)); 
+	fBF.insert(make_pair(sname, 3.57e-9)); 
+	fBFE.insert(make_pair(sname, 0.08)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (acc)")); 
@@ -1284,8 +1292,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("m57") && string::npos != stype.find("sg")) {
 	sname = "SgM57Bs2MuMu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-9)); 
-	fBFE.insert(make_pair(sname, 0.06)); 
+	fBF.insert(make_pair(sname, 3.57e-9)); 
+	fBFE.insert(make_pair(sname, 0.08)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (5.7GeV)")); 
@@ -1294,8 +1302,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("m53") && string::npos != stype.find("sg")) {
 	sname = "SgM53Bs2MuMu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-9)); 
-	fBFE.insert(make_pair(sname, 0.06)); 
+	fBF.insert(make_pair(sname, 3.57e-9)); 
+	fBFE.insert(make_pair(sname, 0.08)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (5.37GeV)")); 
@@ -1304,8 +1312,8 @@ void plotClass::loadFiles(const char *files) {
       if (string::npos != stype.find("m51") && string::npos != stype.find("sg")) {
 	sname = "SgM51Bs2MuMu"; 
 	fF.insert(make_pair(sname, pF)); 
-	fBF.insert(make_pair(sname, 3.2e-9)); 
-	fBFE.insert(make_pair(sname, 0.06)); 
+	fBF.insert(make_pair(sname, 3.57e-9)); 
+	fBFE.insert(make_pair(sname, 0.08)); 
 	fProdR.insert(make_pair(sname, fsfu)); 
 	fLumi.insert(make_pair(sname, atof(slumi.c_str()))); 
 	fName.insert(make_pair(sname, "B_{s}^{0} #rightarrow #mu^{+}#mu^{-} (5.1GeV)")); 
@@ -1828,8 +1836,9 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
   }
   
   lF2->SetLineStyle(kDashed);
+  TFitResultPtr r;
   if (2 == mode) {
-    h->Fit(lF1, "qrl", "", lo, hi); 
+    r = h->Fit(lF1, "qrls", "", lo, hi); 
   } else {
     h->Fit(lF1, "rl", "", lo, hi); 
   }
@@ -1842,11 +1851,13 @@ void plotClass::bgBlind(TH1 *h, int mode, double lo, double hi) {
   if (!strcmp(gMinuit->fCstatu.Data(), "CONVERGED ")) {
     lF2->Update();
     double integral = lF2->Integral(fCuts[fChan]->mBsLo, fCuts[fChan]->mBsHi, static_cast<const Double_t*>(0), 1.e-15);
+    double iE =  lF2->IntegralError(fCuts[fChan]->mBsLo, fCuts[fChan]->mBsHi, r->GetParams(), r->GetCovarianceMatrix(). GetMatrixArray(), 1.e-15);
     fBsBgExp  = integral/h->GetBinWidth(1); 
     fBdBgExp  = lF2->Integral(fCuts[fChan]->mBdLo, fCuts[fChan]->mBdHi)/h->GetBinWidth(1); 
     fLoBgExp  = lF2->Integral(4.90, 5.20)/h->GetBinWidth(1); 
     fHiBgExp  = lF2->Integral(5.45, 5.90)/h->GetBinWidth(1); 
     fBsBgExpE = fBsBgExp*(fBgHistE/fBgHist);
+    fBsBgExpE = iE/h->GetBinWidth(1); 
     fBdBgExpE = fBdBgExp*(fBgHistE/fBgHist);
     cout << "bgBlind: after fit integrals/hist:  lo: " << fLoBgExp << "/" << fBgHistLo
 	 << " hi: " << fHiBgExp << "/" << fBgHistHi << endl; 
@@ -3466,24 +3477,50 @@ void plotClass::loopOverTree(TTree *t, std::string mode, int function, int nevts
     loopFunction(function, imode);
     ptcutOK = fGoodMuonsPt;
     if (fDoUseBDT) ptcutOK = fGoodBdtPt; 
-
-    if (fSaveSmallTree
-	&& fGoodAcceptance 
-	&& fGoodQ
-	&& fGoodPvAveW8
-	&& fGoodTracks 
-	&& fGoodTracksPt 
-	&& fGoodTracksEta 
-	&& ptcutOK
-	&& fGoodMuonsEta
-	&& fGoodJpsiCuts
-	// 	&& (fSaveLargerTree || fGoodMuonsID)
-	&& (fSaveLargerTree || fGoodHLT)
-	) {
-      small->Fill();
+    
+    if (fDoUseBDT) {
+      if (fSaveSmallTree
+	  && fGoodAcceptance 
+	  && fGoodQ
+	  && fGoodPvAveW8
+	  && fGoodTracks 
+	  && fGoodTracksPt 
+	  && fGoodTracksEta 
+	  && ptcutOK
+	  && fGoodMuonsEta
+	  && fGoodJpsiCuts
+	  // 	&& (fSaveLargerTree || fGoodMuonsID)
+	  && (fSaveLargerTree || fGoodHLT)
+	  ) {
+	small->Fill();
+      }
+    } else {
+      if (fSaveSmallTree
+	  && fGoodQ
+	  && fGoodMuonsPt
+	  && fGoodMuonsEta
+	  && fGoodJpsiCuts
+	  && fGoodPvAveW8
+	  && fGoodMaxDoca
+	  && fGoodLip
+	  && fGoodLipS
+	  && fGoodIp
+	  && fGoodIpS
+	  && fGoodPt
+	  && fGoodEta
+	  && fGoodAlpha
+	  && fGoodChi2
+	  && fGoodFLS
+	  && fGoodCloseTrack
+	  && fGoodIso
+	  && fGoodDocaTrk
+	  && (fSaveLargerTree || fGoodHLT)
+	  ) {
+	small->Fill();
+      }
     }
-  }
 
+  }
   if (fSaveSmallTree) {
     small->Write();
     fLocal->Close();
@@ -3982,12 +4019,26 @@ void plotClass::candAnalysis(int mode) {
   fGoodDocaTrk    = (fb.docatrk > pCuts->docatrk);
   fGoodLastCut    = true; 
 
+  fGoodBDT        = (fBDT > pCuts->bdt);
   fGoodHLT        = fb.hlt && fb.hltm2;
 
   // -- no trigger matching for rare decays!
   if (98 == mode) fGoodHLT = fb.hlt; 
 
   fPreselection   = ((fBDT > 0.) && fGoodHLT && fGoodMuonsID ); 
+
+// -- use this for the signal overlays used after unblinding...
+//   fPreselection = (fb.hlt && fb.hltm2 
+// 		   && fGoodMuonsID 
+// 		   && fGoodQ
+// 		   && fGoodPvAveW8 
+// 		   && fGoodTracks
+// 		   && fGoodTracksPt
+// 		   && fGoodTracksEta
+// 		   && fGoodBdtPt
+// 		   && fGoodMuonsEta
+// 		   && fGoodJpsiCuts
+// 		   && (fBDT > fCuts[fChan]->bdt)); 
 
   fAnaCuts.update(); 
 

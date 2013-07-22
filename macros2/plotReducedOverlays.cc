@@ -563,7 +563,7 @@ void plotReducedOverlays::systematics(string sample1, string sample2, int chan) 
 void plotReducedOverlays::overlay(string sample1, string sample2, string selection, string what) {
 
   if (fDoUseBDT) {
-    fStampString = "BDT preliminary"; 
+    fStampString = "CMS"; 
   } else {
     fStampString = "CNC preliminary"; 
   }
@@ -578,6 +578,7 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
   string n1, n2; 
   bool restricted = (what != ""); 
   bool doLegend(true); 
+  bool leftLegend(false); 
   for (unsigned int i = 0; i < fDoList.size(); ++i) {
     if (restricted) {
       if (string::npos == fDoList[i].find(what)) continue;
@@ -585,6 +586,7 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
     n1 =  Form("sbs_%s_%s_%s%s", fSetup.c_str(), sample1.c_str(), fDoList[i].c_str(), selection.c_str());
     n2 =  Form("sbs_%s_%s_%s%s", fSetup.c_str(), sample2.c_str(), fDoList[i].c_str(), selection.c_str());
     if (string::npos != fDoList[i].find("eta")) doLegend = false; else doLegend = true; 
+    if (string::npos != fDoList[i].find("bdt")) leftLegend = true; else leftLegend = false; 
     h1 = (TH1D*)gDirectory->Get(n1.c_str());
     cout << "n1: " << n1 << " -> " << h1 << endl;
     h2 = (TH1D*)gDirectory->Get(n2.c_str());
@@ -624,7 +626,11 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
     h2->Draw("samehist");
 
     if (doLegend) {
-      newLegend(0.50, 0.7, 0.75, 0.85); 
+      if (leftLegend) {
+	newLegend(0.21, 0.7, 0.41, 0.85); 
+      } else {
+	newLegend(0.50, 0.7, 0.75, 0.85); 
+      }
       
       char loption1[100], loption2[100]; 
       string header, h1string, h2string;
@@ -676,7 +682,7 @@ void plotReducedOverlays::overlay(string sample1, string sample2, string selecti
       legg->Draw(); 
     }
 
-    stamp(0.18, fStampString, 0.67, fStampCms); 
+    stamp(0.18, fStampString, 0.4, fStampCms); 
     
     
     if (string::npos != fDoList[i].find("npv")) {

@@ -52,6 +52,7 @@ public:
   virtual void runBlind() {std::cout << "running blinded" << std::endl; BLIND = 1;}
   virtual int  numberOfBPixLayers(TAnaTrack *t);
   virtual int  numberOfPixLayers(TAnaTrack *t);
+  virtual int  numberOfPixelHits(TAnaTrack *pTrack);
   virtual int  numberOfBPixLayer1Hits(TAnaTrack *t);
   virtual int  numberOfTrackerLayers(TAnaTrack *t);
   virtual void setJSONFile(const char *name) {JSONFILE = name;}

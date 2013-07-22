@@ -368,7 +368,7 @@ public:
        fGoodBdtPt, fGoodMuonsPt, fGoodMuonsEta, fGoodTracks, fGoodTracksPt, fGoodTracksEta; 
   bool fGoodQ, fGoodPvAveW8, fGoodLip, fGoodLipS, fGoodIp, fGoodIpS, fGoodMaxDoca,
        fGoodPt, fGoodEta, fGoodAlpha, fGoodFLS, fGoodChi2, fGoodIso;
-  bool fGoodCloseTrack, fGoodDocaTrk, fGoodJpsiCuts, fGoodLastCut; 
+  bool fGoodCloseTrack, fGoodDocaTrk, fGoodJpsiCuts, fGoodBDT, fGoodLastCut; 
 
   double fW8, fW8MisId, fW8MmuID, fW8Mtrig, fW8DmuID, fW8Dtrig;
 

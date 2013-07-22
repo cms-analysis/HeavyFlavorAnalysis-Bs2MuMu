@@ -149,6 +149,26 @@ int  treeReader01::numberOfPixLayers(TAnaTrack *pTrack) {
   return pixHits;
 }
 
+
+// ----------------------------------------------------------------------
+int treeReader01::numberOfPixelHits(TAnaTrack *pTrack) {
+  int hits = pTrack->fValidHits;
+  int pixhits(0); 
+  if(hits>20) hits=20; // pattern has only 20 locations
+  for(int i =0; i<hits; ++i){
+    unsigned int pat = pTrack->fHitPattern[i];
+    //cout<<pat<<" ";
+    if( pat == 0x488 ) ++pixhits;
+    else if( pat == 0x490 )  ++pixhits;
+    else if( pat == 0x498 )  ++pixhits;
+    else if( pat == 0x508 )  ++pixhits;
+    else if( pat == 0x510 )  ++pixhits;
+  }
+  //cout<<dec<<endl;
+  
+  return pixhits;
+}
+
 // ----------------------------------------------------------------------
 int  treeReader01::numberOfBPixLayer1Hits(TAnaTrack *pTrack) {
   int pixHits=0;
@@ -227,6 +247,7 @@ int  treeReader01::numberOfTrackerLayers(TAnaTrack *pTrack) {
     lay = 0; 
     lay = (pat & layermask)>>layerpos; 
 
+    //    lay = lay - 1; // FIXME this line is necessary to be correct. But you should use TAnaTrack::fNumberOfValidTrkHits anyway!
     if ((1 == det) && (0 == hit)) pixl[lay] = true; 
     if ((2 == det) && (0 == hit)) pixd[lay] = true; 
 	 	       	      
@@ -238,14 +259,41 @@ int  treeReader01::numberOfTrackerLayers(TAnaTrack *pTrack) {
 
   }
   
-  int trkHits(0);
-  for (int i = 0; i < 3; ++i) if (pixl[i]) ++trkHits;
-  for (int i = 0; i < 4; ++i) if (tibl[i]) ++trkHits; 
-  for (int i = 0; i < 6; ++i) if (tobl[i]) ++trkHits; 
+  int trkHits(0); 
+  for (int i = 0; i < 3; ++i) {
+    if (pixl[i]) {
+      ++trkHits;
+    }
+  }
 
-  for (int i = 0; i < 2; ++i) if (pixd[i]) ++trkHits; 
-  for (int i = 0; i < 3; ++i) if (tidw[i]) ++trkHits; 
-  for (int i = 0; i < 9; ++i) if (tecw[i]) ++trkHits; 
-  
+  for (int i = 0; i < 4; ++i) {
+    if (tibl[i]) {
+      ++trkHits; 
+    }
+  }
+
+  for (int i = 0; i < 6; ++i) {
+    if (tobl[i]) {
+      ++trkHits; 
+    }
+  }
+
+  for (int i = 0; i < 2; ++i) {
+    if (pixd[i]) {
+      ++trkHits; 
+    }
+  }
+
+  for (int i = 0; i < 3; ++i) {
+    if (tidw[i]) {
+      ++trkHits; 
+    }
+  }
+
+  for (int i = 0; i < 9; ++i) {
+    if (tecw[i]) {
+      ++trkHits; 
+    }
+  }
   return trkHits;
 }

@@ -94,9 +94,124 @@ void plotMisc::loopFunction2(int mode) {
 
 
 
-
 // ----------------------------------------------------------------------
 void plotMisc::calcTauError() {
+
+  const int MIN(5);
+
+  TFile *f = TFile::Open(Form("%s/anaBmm.plotBDT.%d.root", fDirectory.c_str(), fYear)); 
+
+  TH1D *hd(0), *ha(0);
+  int BDTBINS(0); 
+  hd = (TH1D*)f->Get("nor_dm_0_0");
+  while (hd) {
+    hd = (TH1D*)f->Get(Form("nor_dm_0_%d", BDTBINS));
+    ++BDTBINS;
+  }
+  --BDTBINS;
+  hd = (TH1D*)f->Get("nor_dm_0_0");
+      
+  cout << "BDTBINS: " << BDTBINS << endl;
+
+  float bdtCut(0.); 
+  string title, cutVal; 
+
+  TH1D *h(0), *hdExpBs[fNchan], *haExpBs[fNchan], *haObsBs[fNchan];
+  TH1D *hAmsExpDeltaObs[fNchan], *hAmsDeltaNor[fNchan];
+  int NCAT(5); 
+  if (2011 == fYear) NCAT = 3; 
+  double norExpBs(0.), amsExpBs(0.), amsObsBs(0.); 
+  double norExpBsE(0.),amsExpBsE(0.),amsObsBsE(0.); 
+  int bCat(-1), norHistCount(0), amsHistCount(0); 
+
+  zone(1,2);
+  for (int ichan = 0; ichan < fNchan; ++ichan) {
+    fChan = ichan;
+    haObsBs[ichan] = new TH1D(Form("hdObsBs_c%d", ichan), Form("Obs AMS yield in Bs box C%d", ichan), BDTBINS, -1., 1.); 
+    haObsBs[ichan]->Sumw2();
+    hdExpBs[ichan] = new TH1D(Form("hdExpBs_c%d", ichan), Form("Exp yield in Bs Box C%d", ichan), BDTBINS, -1.003, 1.003); 
+    hdExpBs[ichan]->Sumw2();
+    haExpBs[ichan] = new TH1D(Form("haExpBs_c%d", ichan), Form("Exp AMS yield in Bs box C%d", ichan), BDTBINS, -1.006, 1.006); 
+    haExpBs[ichan]->Sumw2();
+
+    hAmsExpDeltaObs[ichan] = new TH1D(Form("hAmsExpDeltaObs_c%d", ichan), 
+				      Form("%d AMS obs - exp in Bs box C%d", fYear, ichan), BDTBINS, -1.006, 1.006); 
+    hAmsExpDeltaObs[ichan]->Sumw2();
+
+    hAmsDeltaNor[ichan] = new TH1D(Form("hAmsDeltaNor_c%d", ichan), 
+				   Form("%d ams exp - nor exp in Bs box C%d", fYear, ichan), BDTBINS, -1.006, 1.006); 
+    hAmsDeltaNor[ichan]->Sumw2();
+
+    
+    for (int i = 0; i < BDTBINS; ++i) {
+      //    for (int i = 0; i < BDTBINS; i = i+10) {
+      hd = (TH1D*)f->Get(Form("nor_dm_%d_%d", ichan, i));
+      ha = (TH1D*)f->Get(Form("ams_am_%d_%d", ichan, i));
+      
+      title = hd->GetTitle(); 
+      string::size_type n2 = title.find_last_of(">"); 
+      cutVal = title.substr(n2+2); 
+      bdtCut = atof(cutVal.c_str()); 
+      
+      norHistCount = hd->Integral(hd->FindBin(5.45+fEpsilon), hd->FindBin(5.9-fEpsilon));
+      amsHistCount = ha->Integral(ha->FindBin(5.45+fEpsilon), ha->FindBin(5.9-fEpsilon));
+      if (amsHistCount < MIN) continue;
+      cout << hd->GetTitle() << " norHistCount: " << norHistCount << " amsHistCount: " << amsHistCount << endl;
+      
+      // -- hd numbers
+      c0->cd(1); 
+      hd->SetMinimum(0.); 
+      bgBlind(hd, 2, 5.45, 5.9);
+      norExpBs = fBsBgExp;
+      norExpBsE= fBsBgExpE;
+
+      // -- ha numbers
+      c0->cd(2);
+      ha->SetMinimum(0.); 
+      bgBlind(ha, 2, 5.45, 5.9);
+      amsExpBs  = fBsBgExp;
+      amsExpBsE = fBsBgExpE;
+      tl->DrawLatex(0.2, 0.92, Form("exp: %4.0f", amsObsBs)); 
+      tl->DrawLatex(0.5, 0.92, Form("exp: %4.3f +/- %4.3f", amsExpBs, amsExpBsE)); 
+      c0->SaveAs(Form("%s/calcTauError-c%d-bdt%d.pdf", fDirectory.c_str(), ichan, i)); 
+
+      amsObsBs = ha->Integral(ha->FindBin(5.30+fEpsilon), ha->FindBin(5.45-fEpsilon));
+
+      cout << "bdtCut: " << bdtCut << " norExpBs: " << norExpBs << " amsExpBs: " << amsExpBs << " amsObsBs: " << amsObsBs 
+	   << " diff: " << 2.*(amsObsBs - amsExpBs)/(amsObsBs+amsExpBs)
+	   << " norm: " << norHistCount << " ams: " << amsHistCount << " -> " << norHistCount/amsHistCount
+	   << endl;
+
+      hAmsExpDeltaObs[ichan]->SetBinContent(i+1, 2.*(amsObsBs - amsExpBs)/(amsObsBs+amsExpBs)); 
+      hAmsExpDeltaObs[ichan]->SetBinError(i+1, quadraticSum(2, TMath::Sqrt(amsObsBs), amsExpBsE)/amsObsBs); 
+
+      hAmsDeltaNor[ichan]->SetBinContent(i+1, (norHistCount/amsHistCount)*amsExpBs - norExpBs); 
+      hAmsDeltaNor[ichan]->SetBinError(i+1, (norHistCount/amsHistCount)*quadraticSum(2, amsExpBsE, norExpBsE)); 
+
+    }
+  }
+
+  zone(1);
+  double xmin(-0.1), xmax(0.5), ymin(-0.04), ymax(0.04); 
+  for (int ichan = 0; ichan < fNchan; ++ichan) {
+    hAmsExpDeltaObs[ichan]->SetAxisRange(xmin, xmax, "X");
+    hAmsExpDeltaObs[ichan]->Draw();
+    pl->DrawLine(xmin, ymax, xmax, ymax); 
+    pl->DrawLine(xmin, ymin, xmax, ymin); 
+    c0->SaveAs(Form("%s/%d-plotMisc-calcTauErrorAmsDelta-c%d.pdf", fDirectory.c_str(), fYear, ichan)); 
+    hAmsDeltaNor[ichan]->SetAxisRange(xmin, xmax, "X");
+    hAmsDeltaNor[ichan]->Draw();
+    pl->DrawLine(xmin, ymax, xmax, ymax); 
+    pl->DrawLine(xmin, ymin, xmax, ymin); 
+    c0->SaveAs(Form("%s/%d-plotMisc-calcTauErrorAmsNor-c%d.pdf", fDirectory.c_str(), fYear, ichan)); 
+  }
+
+
+}
+
+
+// ----------------------------------------------------------------------
+void plotMisc::calcCombSlopes() {
 
   const int MIN(5);
 
